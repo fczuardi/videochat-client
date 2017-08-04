@@ -7,7 +7,7 @@ Embeddeable web app for video chat helpdesk. To be used with the [videochat-api]
 npm install
 ```
 
-## Build bundle and launch local webserver (TBD)
+## Build bundle and launch local webserver
 ```
 npm start
 ```
