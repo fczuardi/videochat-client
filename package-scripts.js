@@ -1,6 +1,11 @@
+require("toml-require").install();
+const config = require("./config.toml");
 const { concurrent } = require("nps-utils");
 
-const transforms = ["unflowify", "tomlify", "es2040"].map(
+const vendors = ["choo", "choo/html", "choo-log"];
+
+// const transforms = ["unflowify", "tomlify", "es2040"].map(
+const transforms = ["unflowify", "es2040"].map(
     t => "transform " + t
 );
 
@@ -11,20 +16,23 @@ const appArgs = [
     ...transforms
 ];
 
+const appHtmlArgs = Object.keys(config.app.html).map(k => `--data-${k}="${config.app.html[k]}"`);
+
 module.exports = {
   scripts: {
-    default: 'nps bundle && http-server docs',
+    default: 'nps build && http-server docs',
     dev: {
         app: "budo --dir src src/app.js"
     },
+    build: concurrent.nps('bundle.app', 'bundle.vendors', 'html'),
     bundle: {
-        default: concurrent.nps(
-            "bundle.app",
-            "bundle.vendors"
-        ),
         app: "browserify " + ["", ...appArgs].join(" --"),
-        vendors: ''
+        vendors:
+            "browserify " +
+            ["", ...vendors].join(" -r ") +
+            " --outfile docs/vendors.js"
     },
+    html: "variable-replacer src/index.html docs " + appHtmlArgs.join(" "),
     test: 'flow',
     fmt: 'prettier --write --tab-width 4'
   }
