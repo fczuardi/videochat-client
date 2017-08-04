@@ -1,7 +1,7 @@
 // @flow
-type ChooView = (Object, Function) => HTMLElement;
-
+import type { ChooView } from "./app";
 const html = require("choo/html");
+const {domEventWrap} = require('./dom')
 
 const messages = {
     loading: "please wait...",
@@ -11,11 +11,6 @@ const messages = {
         signup: "Signup"
     }
 };
-
-const domEventWrap = cb => event => {
-    event.preventDefault();
-    cb(event.target);
-}
 
 const loading = () => html`<div><p>${messages.loading}</p></div>`;
 
@@ -33,7 +28,7 @@ const signupForm = ({ onSubmit }) => html`
 </form>`;
 
 const signup: ChooView = (state, emit) => {
-    const onSubmit = domEventWrap(form => emit('signup:formSubmit', {form}));
+    const onSubmit = domEventWrap(form => emit("signup:formSubmit", form));
     return html`
 <div>
     ${signupForm({ onSubmit })}

@@ -2,10 +2,9 @@ require("toml-require").install();
 const config = require("./config.toml");
 const { concurrent } = require("nps-utils");
 
-const vendors = ["choo", "choo/html", "choo-log"];
+const vendors = ["choo", "choo/html", "choo-log", "xhr"];
 
-// const transforms = ["unflowify", "tomlify", "es2040"].map(
-const transforms = ["unflowify", "es2040"].map(
+const transforms = ["unflowify", "tomlify", "es2040"].map(
     t => "transform " + t
 );
 
