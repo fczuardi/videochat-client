@@ -32,7 +32,7 @@ module.exports = {
             ["", ...vendors].join(" -r ") +
             " --outfile docs/vendors.js"
     },
-    html: "variable-replacer src/index.html docs " + appHtmlArgs.join(" "),
+    html: "variable-replacer index.html docs " + appHtmlArgs.join(" "),
     test: 'flow',
     fmt: 'prettier --write --tab-width 4'
   }
