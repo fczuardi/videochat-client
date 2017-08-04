@@ -21,7 +21,10 @@ if (typeof document === 'undefined' || !document.body) {
 }
 document.body.appendChild(html(_templateObject));
 },{"./views":2,"choo":undefined,"choo-log":undefined,"choo/html":undefined}],2:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["<div><p>", "</p></div>"], ["<div><p>", "</p></div>"]);
+var _templateObject = _taggedTemplateLiteral(["<div><p>", "</p></div>"], ["<div><p>", "</p></div>"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<label>\n    ", "\n    <input name=", "/>\n</label>"], ["\n<label>\n    ", "\n    <input name=", "/>\n</label>"]),
+    _templateObject3 = _taggedTemplateLiteral(["\n<form onsubmit=", ">\n    ", "\n    ", "\n    <input type=\"submit\" value=", " />\n</form>"], ["\n<form onsubmit=", ">\n    ", "\n    ", "\n    <input type=\"submit\" value=", " />\n</form>"]),
+    _templateObject4 = _taggedTemplateLiteral(["\n<div>\n    ", "\n</div>"], ["\n<div>\n    ", "\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -29,14 +32,39 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 var html = require("choo/html");
 
 var messages = {
-    loading: "please wait..."
+    loading: "please wait...",
+    form: {
+        name: "Name",
+        email: "Email",
+        signup: "Signup"
+    }
 };
 
 var loading = function () {
     return html(_templateObject, messages.loading);
 };
 
-var main = loading;
+var textInput = function (_ref) {
+    var label = _ref.label,
+        name = _ref.name;
+    return html(_templateObject2, label, name);
+};
+
+var signupForm = function (_ref2) {
+    var onSubmit = _ref2.onSubmit;
+    return html(_templateObject3, onSubmit, textInput({ label: messages.form.name, name: "name" }), textInput({ label: messages.form.email, name: "email" }), messages.form.signup);
+};
+
+var signup = function () {
+    var onSubmit = function (event) {
+        event.preventDefault();
+        console.log("onsubmit");
+    };
+    return html(_templateObject4, signupForm({ onSubmit: onSubmit }));
+};
+
+// const main = loading;
+var main = signup;
 
 module.exports = {
     main: main
