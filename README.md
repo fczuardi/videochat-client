@@ -14,9 +14,9 @@ npm start
 
 ## Contributing
 
-### Launch dev local webserver (TBD)
+### Launch dev local webserver
 ```
-npm start dev
+npm start dev.app
 ```
 
 [api]: https://github.com/fczuardi/videochat-api
