@@ -1,4 +1,6 @@
 // @flow
+type ChooView = (Object, Function) => HTMLElement;
+
 const html = require("choo/html");
 
 const messages = {
@@ -9,6 +11,11 @@ const messages = {
         signup: "Signup"
     }
 };
+
+const domEventWrap = cb => event => {
+    event.preventDefault();
+    cb(event.target);
+}
 
 const loading = () => html`<div><p>${messages.loading}</p></div>`;
 
@@ -25,11 +32,8 @@ const signupForm = ({ onSubmit }) => html`
     <input type="submit" value=${messages.form.signup} />
 </form>`;
 
-const signup = () => {
-    const onSubmit = event => {
-        event.preventDefault();
-        console.log("onsubmit");
-    };
+const signup: ChooView = (state, emit) => {
+    const onSubmit = domEventWrap(form => emit('signup:formSubmit', {form}));
     return html`
 <div>
     ${signupForm({ onSubmit })}

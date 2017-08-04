@@ -29,6 +29,8 @@ var _templateObject = _taggedTemplateLiteral(["<div><p>", "</p></div>"], ["<div>
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 //      
+
+
 var html = require("choo/html");
 
 var messages = {
@@ -38,6 +40,13 @@ var messages = {
         email: "Email",
         signup: "Signup"
     }
+};
+
+var domEventWrap = function (cb) {
+    return function (event) {
+        event.preventDefault();
+        cb(event.target);
+    };
 };
 
 var loading = function () {
@@ -55,11 +64,10 @@ var signupForm = function (_ref2) {
     return html(_templateObject3, onSubmit, textInput({ label: messages.form.name, name: "name" }), textInput({ label: messages.form.email, name: "email" }), messages.form.signup);
 };
 
-var signup = function () {
-    var onSubmit = function (event) {
-        event.preventDefault();
-        console.log("onsubmit");
-    };
+var signup = function (state, emit) {
+    var onSubmit = domEventWrap(function (form) {
+        return emit('signup:formSubmit', { form: form });
+    });
     return html(_templateObject4, signupForm({ onSubmit: onSubmit }));
 };
 
