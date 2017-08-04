@@ -22,7 +22,7 @@ module.exports = {
   scripts: {
     default: 'nps build && http-server docs',
     dev: {
-        app: "budo --dir src src/app.js"
+        app: "budo --dir src src/app.js --" + ["", ...transforms].join(" --")
     },
     build: concurrent.nps('bundle.app', 'bundle.vendors', 'html'),
     bundle: {
