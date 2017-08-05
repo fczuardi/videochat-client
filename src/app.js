@@ -8,6 +8,7 @@ const html = require("choo/html");
 const setupView = require("./views/setup");
 const homeView = require("./views/home");
 const embedView = require("./views/embed");
+const { apiReducers } = require("./network");
 
 const notifications: ChooMiddleware = (state, emitter) => {
     (state.notificationPermission =
@@ -28,8 +29,9 @@ const mainView: ChooView = (state, emit) =>
         ? setupView(state, emit)
         : homeView(state, emit);
 
-app.use(log());
+// app.use(log());
 app.use(notifications);
+app.use(apiReducers);
 app.route("*", mainView);
 app.route("#setup", setupView);
 app.route("#home", homeView);
