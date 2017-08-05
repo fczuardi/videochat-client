@@ -7,6 +7,7 @@ const log = require("choo-log");
 const html = require("choo/html");
 const setupView = require("./views/setup");
 const homeView = require("./views/home");
+const embedView = require("./views/embed");
 
 const notifications: ChooMiddleware = (state, emitter) => {
     (state.notificationPermission =
@@ -32,6 +33,7 @@ app.use(notifications);
 app.route("*", mainView);
 app.route("#setup", setupView);
 app.route("#home", homeView);
+app.route("#embed", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
