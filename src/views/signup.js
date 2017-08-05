@@ -1,7 +1,6 @@
 // @flow
 import type { ChooView } from "../app";
 const html = require("choo/html");
-const { domEventWrap } = require("../dom");
 const messages = require("../messages");
 
 const textInput = ({ label, name }) => html`
@@ -18,7 +17,14 @@ const signupForm = ({ onSubmit }) => html`
 </form>`;
 
 const signupView: ChooView = (state, emit) => {
-    const onSubmit = domEventWrap(form => emit("signup:formSubmit", form));
+    const onSubmit = event => {
+        event.preventDefault();
+        const formElements = event.target.elements;
+        const name = formElements.namedItem("name").value;
+        const email = formElements.namedItem("email").value;
+        const user = { name, email };
+        emit("api:signup", user);
+    };
     return html`
 <div>
     ${signupForm({ onSubmit })}

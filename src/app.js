@@ -4,16 +4,34 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 
 const app = require("choo")();
 const log = require("choo-log");
+const html = require("choo/html");
 const setupView = require("./views/setup");
-const { domReducers } = require("./dom");
-const { apiReducers } = require("./network");
+const homeView = require("./views/home");
 
-const mainView = setupView;
+const notifications: ChooMiddleware = (state, emitter) => {
+    (state.notificationPermission =
+        window.Notification.permission), emitter.on(
+        "notification:update",
+        permission => {
+            state.notificationPermission = permission;
+            if (permission === "denied") {
+                return emitter.emit("render");
+            }
+            emitter.emit("pushState", "#home");
+        }
+    );
+};
+
+const mainView: ChooView = (state, emit) =>
+    state.notificationPermission !== "granted"
+        ? setupView(state, emit)
+        : homeView(state, emit);
 
 app.use(log());
-app.use(domReducers);
-app.use(apiReducers);
+app.use(notifications);
 app.route("*", mainView);
+app.route("#setup", setupView);
+app.route("#home", homeView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");

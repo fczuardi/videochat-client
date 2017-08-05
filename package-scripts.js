@@ -36,6 +36,9 @@ module.exports = {
         },
         html: "variable-replacer index.html docs " + appHtmlArgs.join(" "),
         test: "flow",
-        fmt: "prettier --write --tab-width 4"
+        fmt: {
+            default: "prettier --write --tab-width 4",
+            all: 'prettier --write --tab-width 4 "src/**/*.js"'
+        }
     }
 };
