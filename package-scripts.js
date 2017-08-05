@@ -15,24 +15,27 @@ const appArgs = [
     ...transforms
 ];
 
-const appHtmlArgs = Object.keys(config.app.html).map(k => `--data-${k}="${config.app.html[k]}"`);
+const appHtmlArgs = Object.keys(config.app.html).map(
+    k => `--data-${k}="${config.app.html[k]}"`
+);
 
 module.exports = {
-  scripts: {
-    default: 'nps build && http-server docs',
-    dev: {
-        app: "budo --dir src src/app.js --" + ["", ...transforms].join(" --")
-    },
-    build: concurrent.nps('bundle.app', 'bundle.vendors', 'html'),
-    bundle: {
-        app: "browserify " + ["", ...appArgs].join(" --"),
-        vendors:
-            "browserify " +
-            ["", ...vendors].join(" -r ") +
-            " --outfile docs/vendors.js"
-    },
-    html: "variable-replacer index.html docs " + appHtmlArgs.join(" "),
-    test: 'flow',
-    fmt: 'prettier --write --tab-width 4'
-  }
+    scripts: {
+        default: "nps build && http-server docs",
+        dev: {
+            app:
+                "budo --dir src src/app.js --" + ["", ...transforms].join(" --")
+        },
+        build: concurrent.nps("bundle.app", "bundle.vendors", "html"),
+        bundle: {
+            app: "browserify " + ["", ...appArgs].join(" --"),
+            vendors:
+                "browserify " +
+                ["", ...vendors].join(" -r ") +
+                " --outfile docs/vendors.js"
+        },
+        html: "variable-replacer index.html docs " + appHtmlArgs.join(" "),
+        test: "flow",
+        fmt: "prettier --write --tab-width 4"
+    }
 };

@@ -1,18 +1,8 @@
 // @flow
-import type { ChooView } from "./app";
+import type { ChooView } from "../app";
 const html = require("choo/html");
-const {domEventWrap} = require('./dom')
-
-const messages = {
-    loading: "please wait...",
-    form: {
-        name: "Name",
-        email: "Email",
-        signup: "Signup"
-    }
-};
-
-const loading = () => html`<div><p>${messages.loading}</p></div>`;
+const { domEventWrap } = require("../dom");
+const messages = require("../messages");
 
 const textInput = ({ label, name }) => html`
 <label>
@@ -27,17 +17,13 @@ const signupForm = ({ onSubmit }) => html`
     <input type="submit" value=${messages.form.signup} />
 </form>`;
 
-const signup: ChooView = (state, emit) => {
+const signupView: ChooView = (state, emit) => {
     const onSubmit = domEventWrap(form => emit("signup:formSubmit", form));
     return html`
 <div>
     ${signupForm({ onSubmit })}
+    <a href="#">back</a>
 </div>`;
 };
 
-// const main = loading;
-const main = signup;
-
-module.exports = {
-    main
-};
+module.exports = signupView;

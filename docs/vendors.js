@@ -492,41 +492,48 @@ var objectKeys = Object.keys || function (obj) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util/":31}],2:[function(require,module,exports){
-var document = require('global/document')
+},{"util/":30}],2:[function(require,module,exports){
 var hyperx = require('hyperx')
-var onload = require('on-load')
+
+var trailingNewlineRegex = /\n[\s]+$/
+var leadingNewlineRegex = /^\n[\s]+/
+var trailingSpaceRegex = /[\s]+$/
+var leadingSpaceRegex = /^[\s]+/
+var multiSpaceRegex = /[\n\s]+/g
 
 var SVGNS = 'http://www.w3.org/2000/svg'
 var XLINKNS = 'http://www.w3.org/1999/xlink'
 
-var BOOL_PROPS = {
-  autofocus: 1,
-  checked: 1,
-  defaultchecked: 1,
-  disabled: 1,
-  formnovalidate: 1,
-  indeterminate: 1,
-  readonly: 1,
-  required: 1,
-  selected: 1,
-  willvalidate: 1
-}
+var BOOL_PROPS = [
+  'autofocus', 'checked', 'defaultchecked', 'disabled', 'formnovalidate',
+  'indeterminate', 'readonly', 'required', 'selected', 'willvalidate'
+]
+
 var COMMENT_TAG = '!--'
+
+var TEXT_TAGS = [
+  'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'data', 'dfn', 'em', 'i',
+  'kbd', 'mark', 'q', 'rp', 'rt', 'rtc', 'ruby', 's', 'amp', 'small', 'span',
+  'strong', 'sub', 'sup', 'time', 'u', 'var', 'wbr'
+]
+
+var CODE_TAGS = [
+  'code', 'pre'
+]
+
 var SVG_TAGS = [
-  'svg',
-  'altGlyph', 'altGlyphDef', 'altGlyphItem', 'animate', 'animateColor',
+  'svg', 'altGlyph', 'altGlyphDef', 'altGlyphItem', 'animate', 'animateColor',
   'animateMotion', 'animateTransform', 'circle', 'clipPath', 'color-profile',
   'cursor', 'defs', 'desc', 'ellipse', 'feBlend', 'feColorMatrix',
-  'feComponentTransfer', 'feComposite', 'feConvolveMatrix', 'feDiffuseLighting',
-  'feDisplacementMap', 'feDistantLight', 'feFlood', 'feFuncA', 'feFuncB',
-  'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage', 'feMerge', 'feMergeNode',
-  'feMorphology', 'feOffset', 'fePointLight', 'feSpecularLighting',
-  'feSpotLight', 'feTile', 'feTurbulence', 'filter', 'font', 'font-face',
-  'font-face-format', 'font-face-name', 'font-face-src', 'font-face-uri',
-  'foreignObject', 'g', 'glyph', 'glyphRef', 'hkern', 'image', 'line',
-  'linearGradient', 'marker', 'mask', 'metadata', 'missing-glyph', 'mpath',
-  'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect',
+  'feComponentTransfer', 'feComposite', 'feConvolveMatrix',
+  'feDiffuseLighting', 'feDisplacementMap', 'feDistantLight', 'feFlood',
+  'feFuncA', 'feFuncB', 'feFuncG', 'feFuncR', 'feGaussianBlur', 'feImage',
+  'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'fePointLight',
+  'feSpecularLighting', 'feSpotLight', 'feTile', 'feTurbulence', 'filter',
+  'font', 'font-face', 'font-face-format', 'font-face-name', 'font-face-src',
+  'font-face-uri', 'foreignObject', 'g', 'glyph', 'glyphRef', 'hkern', 'image',
+  'line', 'linearGradient', 'marker', 'mask', 'metadata', 'missing-glyph',
+  'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient', 'rect',
   'set', 'stop', 'switch', 'symbol', 'text', 'textPath', 'title', 'tref',
   'tspan', 'use', 'view', 'vkern'
 ]
@@ -555,20 +562,7 @@ function belCreateElement (tag, props, children) {
     el = document.createElement(tag)
   }
 
-  // If adding onload events
-  if (props.onload || props.onunload) {
-    var load = props.onload || function () {}
-    var unload = props.onunload || function () {}
-    onload(el, function belOnload () {
-      load(el)
-    }, function belOnunload () {
-      unload(el)
-    },
-    // We have to use non-standard `caller` to find who invokes `belCreateElement`
-    belCreateElement.caller.caller.caller)
-    delete props.onload
-    delete props.onunload
-  }
+  var nodeName = el.nodeName.toLowerCase()
 
   // Create the properties
   for (var p in props) {
@@ -585,7 +579,7 @@ function belCreateElement (tag, props, children) {
         p = 'for'
       }
       // If a property is boolean, set itself to the key
-      if (BOOL_PROPS[key]) {
+      if (BOOL_PROPS.indexOf(key) !== -1) {
         if (val === 'true') val = key
         else if (val === 'false') continue
       }
@@ -608,9 +602,16 @@ function belCreateElement (tag, props, children) {
     }
   }
 
+  appendChild(children)
+  return el
+
   function appendChild (childs) {
     if (!Array.isArray(childs)) return
-    for (var i = 0; i < childs.length; i++) {
+
+    var hadText = false
+    var value, leader
+
+    for (var i = 0, len = childs.length; i < len; i++) {
       var node = childs[i]
       if (Array.isArray(node)) {
         appendChild(node)
@@ -625,31 +626,105 @@ function belCreateElement (tag, props, children) {
         node = node.toString()
       }
 
-      if (typeof node === 'string') {
-        if (el.lastChild && el.lastChild.nodeName === '#text') {
-          el.lastChild.nodeValue += node
-          continue
-        }
-        node = document.createTextNode(node)
-      }
+      var lastChild = el.childNodes[el.childNodes.length - 1]
 
-      if (node && node.nodeType) {
+      // Iterate over text nodes
+      if (typeof node === 'string') {
+        hadText = true
+
+        // If we already had text, append to the existing text
+        if (lastChild && lastChild.nodeName === '#text') {
+          lastChild.nodeValue += node
+
+        // We didn't have a text node yet, create one
+        } else {
+          node = document.createTextNode(node)
+          el.appendChild(node)
+          lastChild = node
+        }
+
+        // If this is the last of the child nodes, make sure we close it out
+        // right
+        if (i === len - 1) {
+          hadText = false
+          // Trim the child text nodes if the current node isn't a
+          // node where whitespace matters.
+          if (TEXT_TAGS.indexOf(nodeName) === -1 &&
+            CODE_TAGS.indexOf(nodeName) === -1) {
+            value = lastChild.nodeValue
+              .replace(leadingNewlineRegex, '')
+              .replace(trailingSpaceRegex, '')
+              .replace(trailingNewlineRegex, '')
+              .replace(multiSpaceRegex, ' ')
+            if (value === '') {
+              el.removeChild(lastChild)
+            } else {
+              lastChild.nodeValue = value
+            }
+          } else if (CODE_TAGS.indexOf(nodeName) === -1) {
+            // The very first node in the list should not have leading
+            // whitespace. Sibling text nodes should have whitespace if there
+            // was any.
+            leader = i === 0 ? '' : ' '
+            value = lastChild.nodeValue
+              .replace(leadingNewlineRegex, leader)
+              .replace(leadingSpaceRegex, ' ')
+              .replace(trailingSpaceRegex, '')
+              .replace(trailingNewlineRegex, '')
+              .replace(multiSpaceRegex, ' ')
+            lastChild.nodeValue = value
+          }
+        }
+
+      // Iterate over DOM nodes
+      } else if (node && node.nodeType) {
+        // If the last node was a text node, make sure it is properly closed out
+        if (hadText) {
+          hadText = false
+
+          // Trim the child text nodes if the current node isn't a
+          // text node or a code node
+          if (TEXT_TAGS.indexOf(nodeName) === -1 &&
+            CODE_TAGS.indexOf(nodeName) === -1) {
+            value = lastChild.nodeValue
+              .replace(leadingNewlineRegex, '')
+              .replace(trailingNewlineRegex, '')
+              .replace(multiSpaceRegex, ' ')
+
+            // Remove empty text nodes, append otherwise
+            if (value === '') {
+              el.removeChild(lastChild)
+            } else {
+              lastChild.nodeValue = value
+            }
+          // Trim the child nodes if the current node is not a node
+          // where all whitespace must be preserved
+          } else if (CODE_TAGS.indexOf(nodeName) === -1) {
+            value = lastChild.nodeValue
+              .replace(leadingSpaceRegex, ' ')
+              .replace(leadingNewlineRegex, '')
+              .replace(trailingNewlineRegex, '')
+              .replace(multiSpaceRegex, ' ')
+            lastChild.nodeValue = value
+          }
+        }
+
+        // Store the last nodename
+        var _nodeName = node.nodeName
+        if (_nodeName) nodeName = _nodeName.toLowerCase()
+
+        // Append the node to the DOM
         el.appendChild(node)
       }
     }
   }
-  appendChild(children)
-
-  return el
 }
 
 module.exports = hyperx(belCreateElement, {comments: true})
 module.exports.default = module.exports
 module.exports.createElement = belCreateElement
 
-},{"global/document":7,"hyperx":10,"on-load":24}],3:[function(require,module,exports){
-
-},{}],4:[function(require,module,exports){
+},{"hyperx":8}],3:[function(require,module,exports){
 var onPerformance = require('on-performance')
 var onIdle = require('on-idle')
 var assert = require('assert')
@@ -796,7 +871,7 @@ function sumDurations (timings) {
   }, 0).toFixed()
 }
 
-},{"assert":1,"on-idle":23,"on-performance":25}],5:[function(require,module,exports){
+},{"assert":1,"on-idle":21,"on-performance":22}],4:[function(require,module,exports){
 'use strict'
 
 var assert = require('assert')
@@ -815,7 +890,7 @@ function ready (callback) {
   })
 }
 
-},{"assert":1}],6:[function(require,module,exports){
+},{"assert":1}],5:[function(require,module,exports){
 var isFunction = require('is-function')
 
 module.exports = forEach
@@ -863,28 +938,7 @@ function forEachObject(object, iterator, context) {
     }
 }
 
-},{"is-function":11}],7:[function(require,module,exports){
-(function (global){
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-document');
-
-var doccy;
-
-if (typeof document !== 'undefined') {
-    doccy = document;
-} else {
-    doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-}
-
-module.exports = doccy;
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"min-document":3}],8:[function(require,module,exports){
+},{"is-function":9}],6:[function(require,module,exports){
 (function (global){
 var win;
 
@@ -901,7 +955,7 @@ if (typeof window !== "undefined") {
 module.exports = win;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = attributeToProperty
 
 var transform = {
@@ -922,7 +976,7 @@ function attributeToProperty (h) {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var attrToProp = require('hyperscript-attribute-to-property')
 
 var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
@@ -1202,7 +1256,7 @@ var closeRE = RegExp('^(' + [
 ].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
 function selfClosing (tag) { return closeRE.test(tag) }
 
-},{"hyperscript-attribute-to-property":9}],11:[function(require,module,exports){
+},{"hyperscript-attribute-to-property":7}],9:[function(require,module,exports){
 module.exports = isFunction
 
 var toString = Object.prototype.toString
@@ -1219,7 +1273,8 @@ function isFunction (fn) {
       fn === window.prompt))
 };
 
-},{}],12:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
+var splice = require('remove-array-items')
 var nanotiming = require('nanotiming')
 var assert = require('assert')
 
@@ -1231,23 +1286,21 @@ function Nanobus (name) {
   this._name = name || 'nanobus'
   this._starListeners = []
   this._listeners = {}
-
-  this._timing = nanotiming(this._name)
 }
 
 Nanobus.prototype.emit = function (eventName, data) {
   assert.equal(typeof eventName, 'string', 'nanobus.emit: eventName should be type string')
 
-  this._timing.start(eventName)
+  var emitTiming = nanotiming(this._name + "('" + eventName + "')")
   var listeners = this._listeners[eventName]
   if (listeners && listeners.length > 0) {
     this._emit(this._listeners[eventName], data)
   }
 
   if (this._starListeners.length > 0) {
-    this._emit(this._starListeners, eventName, data)
+    this._emit(this._starListeners, eventName, data, emitTiming.uuid)
   }
-  this._timing.end(eventName)
+  emitTiming()
 
   return this
 }
@@ -1323,7 +1376,7 @@ Nanobus.prototype.removeListener = function (eventName, listener) {
     if (!arr) return
     var index = arr.indexOf(listener)
     if (index !== -1) {
-      arr.splice(index, 1)
+      splice(arr, index, 1)
       return true
     }
   }
@@ -1344,7 +1397,10 @@ Nanobus.prototype.removeAllListeners = function (eventName) {
 }
 
 Nanobus.prototype.listeners = function (eventName) {
-  var listeners = (eventName !== '*') ? this._listeners[eventName] : this._starListeners
+  var listeners = eventName !== '*'
+    ? this._listeners[eventName]
+    : this._starListeners
+
   var ret = []
   if (listeners) {
     var ilength = listeners.length
@@ -1353,71 +1409,79 @@ Nanobus.prototype.listeners = function (eventName) {
   return ret
 }
 
-Nanobus.prototype._emit = function (arr, eventName, data) {
+Nanobus.prototype._emit = function (arr, eventName, data, uuid) {
   if (typeof arr === 'undefined') return
-  if (!data) {
+  if (data === undefined) {
     data = eventName
     eventName = null
   }
   var length = arr.length
   for (var i = 0; i < length; i++) {
     var listener = arr[i]
-    if (eventName) listener(eventName, data)
-    else listener(data)
+    if (eventName) {
+      if (uuid !== undefined) listener(eventName, data, uuid)
+      else listener(eventName, data)
+    } else {
+      listener(data)
+    }
   }
 }
 
-},{"assert":1,"nanotiming":22}],13:[function(require,module,exports){
+},{"assert":1,"nanotiming":20,"remove-array-items":25}],11:[function(require,module,exports){
 var assert = require('assert')
 
-module.exports = history
-
-// listen to html5 pushstate events
-// and update router accordingly
-function history (cb) {
-  assert.equal(typeof cb, 'function', 'nanohistory: cb must be type function')
-  window.onpopstate = function () {
-    cb(document.location)
-  }
-}
-
-},{"assert":1}],14:[function(require,module,exports){
-var assert = require('assert')
+var safeExternalLink = /[noopener|noreferrer] [noopener|noreferrer]/
+var protocolLink = /^[\w-_]+:/
 
 module.exports = href
 
-var noRoutingAttrName = 'data-no-routing'
-
-// handle a click if is anchor tag with an href
-// and url lives on the same domain. Replaces
-// trailing '#' so empty links work as expected.
-// (fn(str), obj?) -> undefined
 function href (cb, root) {
-  assert.equal(typeof cb, 'function', 'nanohref: cb must be type function')
+  assert.notEqual(typeof window, 'undefined', 'nanohref: expected window to exist')
+
   root = root || window.document
 
-  window.onclick = function (e) {
-    if ((e.button && e.button !== 0) || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+  assert.equal(typeof cb, 'function', 'nanohref: cb should be type function')
+  assert.equal(typeof root, 'object', 'nanohref: root should be type object')
 
-    var node = (function traverse (node) {
+  window.addEventListener('click', function (e) {
+    if ((e.button && e.button !== 0) ||
+      e.ctrlKey || e.metaKey || e.altKey || e.shiftKey ||
+      e.defaultPrevented) return
+
+    var anchor = (function traverse (node) {
       if (!node || node === root) return
-      if (node.localName !== 'a') return traverse(node.parentNode)
-      if (node.href === undefined) return traverse(node.parentNode)
-      if (window.location.host !== node.host) return traverse(node.parentNode)
+      if (node.localName !== 'a' || node.href === undefined) {
+        return traverse(node.parentNode)
+      }
       return node
     })(e.target)
 
-    if (!node) return
+    if (!anchor) return
 
-    var isRoutingDisabled = node.hasAttribute(noRoutingAttrName)
-    if (isRoutingDisabled) return
+    if (window.location.origin !== anchor.origin ||
+      anchor.hasAttribute('download') ||
+      (anchor.getAttribute('target') === '_blank' &&
+        safeExternalLink.test(anchor.getAttribute('rel'))) ||
+      protocolLink.test(anchor.getAttribute('href'))) return
 
     e.preventDefault()
-    cb(node)
-  }
+    cb(anchor)
+  })
 }
 
-},{"assert":1}],15:[function(require,module,exports){
+},{"assert":1}],12:[function(require,module,exports){
+var assert = require('assert')
+
+module.exports = nanolocation
+
+function nanolocation () {
+  assert.notEqual(typeof window, 'undefined', 'nanolocation: expected window to exist')
+  var pathname = window.location.pathname.replace(/\/$/, '')
+  var hash = window.location.hash.replace(/^#/, '/')
+  return pathname + hash
+}
+
+},{"assert":1}],13:[function(require,module,exports){
 var assert = require('assert')
 var xtend = require('xtend')
 
@@ -1581,17 +1645,17 @@ function pad (str) {
   return str.length !== 2 ? 0 + str : str
 }
 
-},{"assert":1,"xtend":34}],16:[function(require,module,exports){
+},{"assert":1,"xtend":33}],14:[function(require,module,exports){
 var assert = require('assert')
 var morph = require('./lib/morph')
-var rootLabelRegex = /^data-onloadid/
 
-var ELEMENT_NODE = 1
+var TEXT_NODE = 3
+// var DEBUG = false
 
 module.exports = nanomorph
 
-// morph one tree into another tree
-// (obj, obj) -> obj
+// Morph one tree into another tree
+//
 // no parent
 //   -> same: diff and walk children
 //   -> not same: replace and return
@@ -1604,17 +1668,29 @@ module.exports = nanomorph
 // nodes are the same
 //   -> walk all child nodes and append to old node
 function nanomorph (oldTree, newTree) {
+  // if (DEBUG) {
+  //   console.log(
+  //   'nanomorph\nold\n  %s\nnew\n  %s',
+  //   oldTree && oldTree.outerHTML,
+  //   newTree && newTree.outerHTML
+  // )
+  // }
   assert.equal(typeof oldTree, 'object', 'nanomorph: oldTree should be an object')
   assert.equal(typeof newTree, 'object', 'nanomorph: newTree should be an object')
-
-  persistStatefulRoot(newTree, oldTree)
   var tree = walk(newTree, oldTree)
+  // if (DEBUG) console.log('=> morphed\n  %s', tree.outerHTML)
   return tree
 }
 
-// walk and morph a dom tree
-// (obj, obj) -> obj
+// Walk and morph a dom tree
 function walk (newNode, oldNode) {
+  // if (DEBUG) {
+  //   console.log(
+  //   'walk\nold\n  %s\nnew\n  %s',
+  //   oldNode && oldNode.outerHTML,
+  //   newNode && newNode.outerHTML
+  // )
+  // }
   if (!oldNode) {
     return newNode
   } else if (!newNode) {
@@ -1630,53 +1706,97 @@ function walk (newNode, oldNode) {
   }
 }
 
-// update the children of elements
+// Update the children of elements
 // (obj, obj) -> null
 function updateChildren (newNode, oldNode) {
-  if (!newNode.childNodes || !oldNode.childNodes) return
+  // if (DEBUG) {
+  //   console.log(
+  //   'updateChildren\nold\n  %s\nnew\n  %s',
+  //   oldNode && oldNode.outerHTML,
+  //   newNode && newNode.outerHTML
+  // )
+  // }
+  var oldChild, newChild, morphed, oldMatch
 
-  var newLength = newNode.childNodes.length
-  var oldLength = oldNode.childNodes.length
-  var length = Math.max(oldLength, newLength)
+  // The offset is only ever increased, and used for [i - offset] in the loop
+  var offset = 0
 
-  var iNew = 0
-  var iOld = 0
-  for (var i = 0; i < length; i++, iNew++, iOld++) {
-    var newChildNode = newNode.childNodes[iNew]
-    var oldChildNode = oldNode.childNodes[iOld]
-    var retChildNode = walk(newChildNode, oldChildNode)
-    if (!retChildNode) {
-      if (oldChildNode) {
-        oldNode.removeChild(oldChildNode)
-        iOld--
-      }
-    } else if (!oldChildNode) {
-      if (retChildNode) {
-        oldNode.appendChild(retChildNode)
-        iNew--
-      }
-    } else if (retChildNode !== oldChildNode) {
-      oldNode.replaceChild(retChildNode, oldChildNode)
-      iNew--
-    }
-  }
-}
-
-function persistStatefulRoot (newNode, oldNode) {
-  if (!newNode || !oldNode || oldNode.nodeType !== ELEMENT_NODE || newNode.nodeType !== ELEMENT_NODE) return
-  var oldAttrs = oldNode.attributes
-  var attr, name
-  for (var i = 0, len = oldAttrs.length; i < len; i++) {
-    attr = oldAttrs[i]
-    name = attr.name
-    if (rootLabelRegex.test(name)) {
-      newNode.setAttribute(name, attr.value)
+  for (var i = 0; ; i++) {
+    oldChild = oldNode.childNodes[i]
+    newChild = newNode.childNodes[i - offset]
+    // if (DEBUG) {
+    //   console.log(
+    //   '===\n- old\n  %s\n- new\n  %s',
+    //   oldChild && oldChild.outerHTML,
+    //   newChild && newChild.outerHTML
+    // )
+    // }
+    // Both nodes are empty, do nothing
+    if (!oldChild && !newChild) {
       break
+
+    // There is no new child, remove old
+    } else if (!newChild) {
+      oldNode.removeChild(oldChild)
+      i--
+
+    // There is no old child, add new
+    } else if (!oldChild) {
+      oldNode.appendChild(newChild)
+      offset++
+
+    // Both nodes are the same, morph
+    } else if (same(newChild, oldChild)) {
+      morphed = walk(newChild, oldChild)
+      if (morphed !== oldChild) {
+        oldNode.replaceChild(morphed, oldChild)
+        offset++
+      }
+
+    // Both nodes do not share an ID or a placeholder, try reorder
+    } else {
+      oldMatch = null
+
+      // Try and find a similar node somewhere in the tree
+      for (var j = i; j < oldNode.childNodes.length; j++) {
+        if (same(oldNode.childNodes[j], newChild)) {
+          oldMatch = oldNode.childNodes[j]
+          break
+        }
+      }
+
+      // If there was a node with the same ID or placeholder in the old list
+      if (oldMatch) {
+        morphed = walk(newChild, oldMatch)
+        if (morphed !== oldMatch) offset++
+        oldNode.insertBefore(morphed, oldChild)
+
+      // It's safe to morph two nodes in-place if neither has an ID
+      } else if (!newChild.id && !oldChild.id) {
+        morphed = walk(newChild, oldChild)
+        if (morphed !== oldChild) {
+          oldNode.replaceChild(morphed, oldChild)
+          offset++
+        }
+
+      // Insert the node at the index if we couldn't morph or find a matching node
+      } else {
+        oldNode.insertBefore(newChild, oldChild)
+        offset++
+      }
     }
   }
 }
 
-},{"./lib/morph":18,"assert":1}],17:[function(require,module,exports){
+function same (a, b) {
+  if (a.id) return a.id === b.id
+  if (a.isSameNode) return a.isSameNode(b)
+  if (a.tagName !== b.tagName) return false
+  if (a.type === TEXT_NODE) return a.nodeValue === b.nodeValue
+  return false
+}
+
+},{"./lib/morph":16,"assert":1}],15:[function(require,module,exports){
 module.exports = [
   // attribute events (can be set with attributes)
   'onclick',
@@ -1716,7 +1836,7 @@ module.exports = [
   'onfocusout'
 ]
 
-},{}],18:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var events = require('./events')
 var eventsLength = events.length
 
@@ -1745,7 +1865,6 @@ function morph (newNode, oldNode) {
   if (nodeName === 'INPUT') updateInput(newNode, oldNode)
   else if (nodeName === 'OPTION') updateOption(newNode, oldNode)
   else if (nodeName === 'TEXTAREA') updateTextarea(newNode, oldNode)
-  else if (nodeName === 'SELECT') updateSelect(newNode, oldNode)
 
   copyEvents(newNode, oldNode)
 }
@@ -1764,23 +1883,24 @@ function copyAttrs (newNode, oldNode) {
     attrName = attr.name
     attrNamespaceURI = attr.namespaceURI
     attrValue = attr.value
-
     if (attrNamespaceURI) {
       attrName = attr.localName || attrName
       fromValue = oldNode.getAttributeNS(attrNamespaceURI, attrName)
-
       if (fromValue !== attrValue) {
         oldNode.setAttributeNS(attrNamespaceURI, attrName, attrValue)
       }
     } else {
-      fromValue = oldNode.getAttribute(attrName)
-
-      if (fromValue !== attrValue) {
-        // apparently values are always cast to strings, ah well
-        if (attrValue === 'null' || attrValue === 'undefined') {
-          oldNode.removeAttribute(attrName)
-        } else {
-          oldNode.setAttribute(attrName, attrValue)
+      if (!oldNode.hasAttribute(attrName)) {
+        oldNode.setAttribute(attrName, attrValue)
+      } else {
+        fromValue = oldNode.getAttribute(attrName)
+        if (fromValue !== attrValue) {
+          // apparently values are always cast to strings, ah well
+          if (attrValue === 'null' || attrValue === 'undefined') {
+            oldNode.removeAttribute(attrName)
+          } else {
+            oldNode.setAttribute(attrName, attrValue)
+          }
         }
       }
     }
@@ -1834,12 +1954,18 @@ function updateInput (newNode, oldNode) {
   updateAttribute(newNode, oldNode, 'checked')
   updateAttribute(newNode, oldNode, 'disabled')
 
-  if (!newNode.hasAttributeNS(null, 'value') || newValue === 'null') {
-    oldNode.value = ''
-    oldNode.removeAttribute('value')
-  } else if (newValue !== oldValue) {
+  if (newValue !== oldValue) {
     oldNode.setAttribute('value', newValue)
     oldNode.value = newValue
+  }
+
+  if (newValue === 'null') {
+    oldNode.value = ''
+    oldNode.removeAttribute('value')
+  }
+
+  if (!newNode.hasAttributeNS(null, 'value')) {
+    oldNode.removeAttribute('value')
   } else if (oldNode.type === 'range') {
     // this is so elements like slider move their UI thingy
     oldNode.value = newValue
@@ -1852,7 +1978,7 @@ function updateTextarea (newNode, oldNode) {
     oldNode.value = newValue
   }
 
-  if (oldNode.firstChild) {
+  if (oldNode.firstChild && oldNode.firstChild.nodeValue !== newValue) {
     // Needed for IE. Apparently IE sets the placeholder as the
     // node value and vise versa. This ignores an empty update.
     if (newValue === '' && oldNode.firstChild.nodeValue === oldNode.placeholder) {
@@ -1863,57 +1989,36 @@ function updateTextarea (newNode, oldNode) {
   }
 }
 
-function updateSelect (newNode, oldNode) {
-  if (!oldNode.hasAttributeNS(null, 'multiple')) {
-    var i = 0
-    var curChild = oldNode.firstChild
-    while (curChild) {
-      var nodeName = curChild.nodeName
-      if (nodeName && nodeName.toUpperCase() === 'OPTION') {
-        if (curChild.hasAttributeNS(null, 'selected')) break
-        i++
-      }
-      curChild = curChild.nextSibling
-    }
-
-    newNode.selectedIndex = i
-  }
-}
-
 function updateAttribute (newNode, oldNode, name) {
   if (newNode[name] !== oldNode[name]) {
     oldNode[name] = newNode[name]
     if (newNode[name]) {
       oldNode.setAttribute(name, '')
     } else {
-      oldNode.removeAttribute(name, '')
+      oldNode.removeAttribute(name)
     }
   }
 }
 
-},{"./events":17}],19:[function(require,module,exports){
-var nanomorph = require('nanomorph')
+},{"./events":15}],17:[function(require,module,exports){
+var reg = new RegExp('([^?=&]+)(=([^&]*))?', 'g')
 var assert = require('assert')
 
-module.exports = nanomount
+module.exports = qs
 
-function nanomount (target, newTree) {
-  if (target.nodeName === 'BODY') {
-    var children = target.childNodes
-    for (var i = 0; i < children.length; i++) {
-      if (children[i].nodeName === 'SCRIPT') {
-        newTree.appendChild(children[i].cloneNode(true))
-      }
-    }
-  }
+function qs (url) {
+  assert.equal(typeof url, 'string', 'nanoquery: url should be type string')
+  assert.ok(typeof window !== 'undefined', 'nanoquery: expected window to exist')
 
-  var tree = nanomorph(target, newTree)
-  assert.equal(tree, target, 'nanomount: The target node ' +
-    tree.outerHTML.nodeName + ' is not the same type as the new node ' +
-    target.outerHTML.nodeName + '.')
+  var obj = {}
+  url.replace(/^.*\?/, '').replace(reg, function (a0, a1, a2, a3) {
+    obj[window.decodeURIComponent(a1)] = window.decodeURIComponent(a3)
+  })
+
+  return obj
 }
 
-},{"assert":1,"nanomorph":16}],20:[function(require,module,exports){
+},{"assert":1}],18:[function(require,module,exports){
 'use strict'
 
 var assert = require('assert')
@@ -1950,7 +2055,7 @@ function nanoraf (render, raf) {
   }
 }
 
-},{"assert":1}],21:[function(require,module,exports){
+},{"assert":1}],19:[function(require,module,exports){
 var wayfarer = require('wayfarer')
 
 var isLocalFile = (/file:\/\//.test(typeof window === 'object' &&
@@ -2010,33 +2115,50 @@ function pathname (route, isElectron) {
   return route.replace(suffix, '').replace(normalize, '/')
 }
 
-},{"wayfarer":32}],22:[function(require,module,exports){
+},{"wayfarer":31}],20:[function(require,module,exports){
+var onIdle = require('on-idle')
 var assert = require('assert')
 
-module.exports = Nanotiming
+var perf
+var disabled = true
+try {
+  perf = window.performance
+  disabled = window.localStorage.DISABLE_NANOTIMING === 'true' || !perf.mark
+} catch (e) { }
 
-function Nanotiming (name) {
-  if (!(this instanceof Nanotiming)) return new Nanotiming(name)
-  assert.equal(typeof name, 'string', 'Nanotiming: name should be type string')
-  this._name = name
-  this._enabled = typeof window !== 'undefined' &&
-    window.performance && window.performance.mark
+module.exports = nanotiming
+
+function nanotiming (name) {
+  assert.equal(typeof name, 'string', 'nanotiming: name should be type string')
+
+  if (disabled) return noop
+
+  var uuid = (perf.now() * 100).toFixed()
+  var startName = 'start-' + uuid + '-' + name
+  perf.mark(startName)
+
+  function end (cb) {
+    var endName = 'end-' + uuid + '-' + name
+    perf.mark(endName)
+
+    onIdle(function () {
+      var measureName = name + ' [' + uuid + ']'
+      perf.measure(measureName, startName, endName)
+      perf.clearMarks(startName)
+      perf.clearMarks(endName)
+      if (cb) cb(name)
+    })
+  }
+
+  end.uuid = uuid
+  return end
 }
 
-Nanotiming.prototype.start = function (partial) {
-  if (!this._enabled) return
-  var name = partial ? this._name + ':' + partial : this._name
-  window.performance.mark(name + '-start')
+function noop (cb) {
+  if (cb) onIdle(cb)
 }
 
-Nanotiming.prototype.end = function (partial) {
-  if (!this._enabled) return
-  var name = partial ? this._name + ':' + partial : this._name
-  window.performance.mark(name + '-end')
-  window.performance.measure(name, name + '-start', name + '-end')
-}
-
-},{"assert":1}],23:[function(require,module,exports){
+},{"assert":1,"on-idle":21}],21:[function(require,module,exports){
 var assert = require('assert')
 
 var dftOpts = {}
@@ -2061,96 +2183,7 @@ function onIdle (cb, opts) {
   }
 }
 
-},{"assert":1}],24:[function(require,module,exports){
-/* global MutationObserver */
-var document = require('global/document')
-var window = require('global/window')
-var watch = Object.create(null)
-var KEY_ID = 'onloadid' + (new Date() % 9e6).toString(36)
-var KEY_ATTR = 'data-' + KEY_ID
-var INDEX = 0
-
-if (window && window.MutationObserver) {
-  var observer = new MutationObserver(function (mutations) {
-    if (Object.keys(watch).length < 1) return
-    for (var i = 0; i < mutations.length; i++) {
-      if (mutations[i].attributeName === KEY_ATTR) {
-        eachAttr(mutations[i], turnon, turnoff)
-        continue
-      }
-      eachMutation(mutations[i].removedNodes, turnoff)
-      eachMutation(mutations[i].addedNodes, turnon)
-    }
-  })
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeOldValue: true,
-    attributeFilter: [KEY_ATTR]
-  })
-}
-
-module.exports = function onload (el, on, off, caller) {
-  on = on || function () {}
-  off = off || function () {}
-  el.setAttribute(KEY_ATTR, 'o' + INDEX)
-  watch['o' + INDEX] = [on, off, 0, caller || onload.caller]
-  INDEX += 1
-  return el
-}
-
-function turnon (index, el) {
-  if (watch[index][0] && watch[index][2] === 0) {
-    watch[index][0](el)
-    watch[index][2] = 1
-  }
-}
-
-function turnoff (index, el) {
-  if (watch[index][1] && watch[index][2] === 1) {
-    watch[index][1](el)
-    watch[index][2] = 0
-  }
-}
-
-function eachAttr (mutation, on, off) {
-  var newValue = mutation.target.getAttribute(KEY_ATTR)
-  if (sameOrigin(mutation.oldValue, newValue)) {
-    watch[newValue] = watch[mutation.oldValue]
-    return
-  }
-  if (watch[mutation.oldValue]) {
-    off(mutation.oldValue, mutation.target)
-  }
-  if (watch[newValue]) {
-    on(newValue, mutation.target)
-  }
-}
-
-function sameOrigin (oldValue, newValue) {
-  if (!oldValue || !newValue) return false
-  return watch[oldValue][3] === watch[newValue][3]
-}
-
-function eachMutation (nodes, fn) {
-  var keys = Object.keys(watch)
-  for (var i = 0; i < nodes.length; i++) {
-    if (nodes[i] && nodes[i].getAttribute && nodes[i].getAttribute(KEY_ATTR)) {
-      var onloadid = nodes[i].getAttribute(KEY_ATTR)
-      keys.forEach(function (k) {
-        if (onloadid === k) {
-          fn(k, nodes[i])
-        }
-      })
-    }
-    if (nodes[i].childNodes.length > 0) {
-      eachMutation(nodes[i].childNodes, fn)
-    }
-  }
-}
-
-},{"global/document":7,"global/window":8}],25:[function(require,module,exports){
+},{"assert":1}],22:[function(require,module,exports){
 var onIdle = require('on-idle')
 var assert = require('assert')
 
@@ -2208,7 +2241,7 @@ function onPerformance (cb) {
   }
 }
 
-},{"assert":1,"on-idle":23}],26:[function(require,module,exports){
+},{"assert":1,"on-idle":21}],23:[function(require,module,exports){
 var trim = require('trim')
   , forEach = require('for-each')
   , isArray = function(arg) {
@@ -2240,7 +2273,7 @@ module.exports = function (headers) {
 
   return result
 }
-},{"for-each":6,"trim":28}],27:[function(require,module,exports){
+},{"for-each":5,"trim":27}],24:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -2426,7 +2459,49 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],28:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
+'use strict'
+
+/**
+ * Remove a range of items from an array
+ *
+ * @function removeItems
+ * @param {Array<*>} arr The target array
+ * @param {number} startIdx The index to begin removing from (inclusive)
+ * @param {number} removeCount How many items to remove
+ */
+module.exports = function removeItems(arr, startIdx, removeCount)
+{
+  var i, length = arr.length
+
+  if (startIdx >= length || removeCount === 0) {
+    return
+  }
+
+  removeCount = (startIdx + removeCount > length ? length - startIdx : removeCount)
+
+  var len = length - removeCount
+
+  for (i = startIdx; i < len; ++i) {
+    arr[i] = arr[i + removeCount]
+  }
+
+  arr.length = len
+}
+
+},{}],26:[function(require,module,exports){
+module.exports = scrollToAnchor
+
+function scrollToAnchor (anchor, options) {
+  if (anchor) {
+    try {
+      var el = document.querySelector(anchor)
+      if (el) el.scrollIntoView(options)
+    } catch (e) {}
+  }
+}
+
+},{}],27:[function(require,module,exports){
 
 exports = module.exports = trim;
 
@@ -2442,7 +2517,7 @@ exports.right = function(str){
   return str.replace(/\s*$/, '');
 };
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2467,14 +2542,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -3064,7 +3139,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":30,"_process":27,"inherits":29}],32:[function(require,module,exports){
+},{"./support/isBuffer":29,"_process":24,"inherits":28}],31:[function(require,module,exports){
 var assert = require('assert')
 var trie = require('./trie')
 
@@ -3131,7 +3206,7 @@ function Wayfarer (dft) {
   }
 }
 
-},{"./trie":33,"assert":1}],33:[function(require,module,exports){
+},{"./trie":32,"assert":1}],32:[function(require,module,exports){
 var mutate = require('xtend/mutable')
 var assert = require('assert')
 var xtend = require('xtend')
@@ -3270,7 +3345,7 @@ Trie.prototype.mount = function (route, trie) {
   }
 }
 
-},{"assert":1,"xtend":34,"xtend/mutable":35}],34:[function(require,module,exports){
+},{"assert":1,"xtend":33,"xtend/mutable":34}],33:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -3291,7 +3366,7 @@ function extend() {
     return target
 }
 
-},{}],35:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -3397,150 +3472,203 @@ function logger (opts) {
   }
 }
 
-},{"./lib/instrument":4,"assert":1,"nanologger":15}],"choo/html":[function(require,module,exports){
+},{"./lib/instrument":3,"assert":1,"nanologger":13}],"choo/html":[function(require,module,exports){
 module.exports = require('bel')
 
 },{"bel":2}],"choo":[function(require,module,exports){
+var scrollToAnchor = require('scroll-to-anchor')
 var documentReady = require('document-ready')
-var nanohistory = require('nanohistory')
+var nanolocation = require('nanolocation')
+var nanotiming = require('nanotiming')
 var nanorouter = require('nanorouter')
-var nanomount = require('nanomount')
 var nanomorph = require('nanomorph')
+var nanoquery = require('nanoquery')
 var nanohref = require('nanohref')
 var nanoraf = require('nanoraf')
 var nanobus = require('nanobus')
 var assert = require('assert')
+var xtend = require('xtend')
 
 module.exports = Choo
 
+var HISTORY_OBJECT = {}
+
 function Choo (opts) {
+  if (!(this instanceof Choo)) return new Choo(opts)
   opts = opts || {}
 
-  var routerOpts = {
-    default: opts.defaultRoute || '/404',
-    curry: true
+  assert.equal(typeof opts, 'object', 'choo: opts should be type object')
+
+  var self = this
+
+  // define events used by choo
+  this._events = {
+    DOMCONTENTLOADED: 'DOMContentLoaded',
+    DOMTITLECHANGE: 'DOMTitleChange',
+    REPLACESTATE: 'replaceState',
+    PUSHSTATE: 'pushState',
+    NAVIGATE: 'navigate',
+    POPSTATE: 'popState',
+    RENDER: 'render'
   }
 
-  var timingEnabled = opts.timing === undefined ? true : opts.timing
-  var hasWindow = typeof window !== 'undefined'
-  var hasPerformance = hasWindow && window.performance && window.performance.mark
-  var router = nanorouter(routerOpts)
-  var bus = nanobus()
-  var rerender = null
-  var tree = null
-  var state = {}
+  // properties for internal use only
+  this._historyEnabled = opts.history === undefined ? true : opts.history
+  this._hrefEnabled = opts.href === undefined ? true : opts.href
+  this._hasWindow = typeof window !== 'undefined'
+  this._createLocation = nanolocation
+  this._tree = null
 
-  return {
-    toString: toString,
-    use: register,
-    mount: mount,
-    router: router,
-    route: route,
-    start: start
-  }
+  // properties that are part of the API
+  this.router = nanorouter({ curry: true })
+  this.emitter = nanobus('choo.emit')
+  this.state = { events: this._events }
 
-  function route (route, handler) {
-    router.on(route, function (params) {
-      return function () {
-        state.params = params
-        return handler(state, emit)
-      }
-    })
-  }
+  // listen for title changes; available even when calling .toString()
+  if (this._hasWindow) this.state.title = document.title
+  this.emitter.prependListener(this._events.DOMTITLECHANGE, function (title) {
+    assert.equal(typeof title, 'string', 'events.DOMTitleChange: title should be type string')
+    self.state.title = title
+    if (self._hasWindow) document.title = title
+  })
+}
 
-  function register (cb) {
-    cb(state, bus)
-  }
+Choo.prototype.route = function (route, handler) {
+  assert.equal(typeof route, 'string', 'choo.route: route should be type string')
+  assert.equal(typeof handler, 'function', 'choo.handler: route should be type function')
 
-  function start () {
-    if (opts.history !== false) {
-      nanohistory(function (href) {
-        bus.emit('pushState')
+  var self = this
+  this.router.on(route, function (params) {
+    return function () {
+      self.state.params = params
+      self.state.route = route
+      var routeTiming = nanotiming("choo.route('" + route + "')")
+      var res = handler(self.state, function (eventName, data) {
+        self.emitter.emit(eventName, data)
       })
+      routeTiming()
+      return res
+    }
+  })
+}
 
-      bus.prependListener('pushState', updateHistory.bind(null, 'push'))
-      bus.prependListener('replaceState', updateHistory.bind(null, 'replace'))
+Choo.prototype.use = function (cb) {
+  assert.equal(typeof cb, 'function', 'choo.use: cb should be type function')
+  var endTiming = nanotiming('choo.use')
+  cb(this.state, this.emitter, this)
+  endTiming()
+}
 
-      if (opts.href !== false) {
-        nanohref(function (location) {
-          var href = location.href
-          var currHref = window.location.href
-          if (href === currHref) return
-          bus.emit('pushState', href)
-        })
-      }
+Choo.prototype.start = function () {
+  assert.equal(typeof window, 'object', 'choo.start: window was not found. .start() must be called in a browser, use .toString() if running in Node')
+
+  var self = this
+  if (this._historyEnabled) {
+    this.emitter.prependListener(this._events.NAVIGATE, function () {
+      self.emitter.emit(self._events.RENDER)
+      self.state.query = nanoquery(window.location.search)
+      setTimeout(scrollToAnchor.bind(null, window.location.hash), 0)
+    })
+
+    this.emitter.prependListener(this._events.POPSTATE, function () {
+      self.emitter.emit(self._events.NAVIGATE)
+    })
+
+    this.emitter.prependListener(this._events.PUSHSTATE, function (href) {
+      assert.equal(typeof href, 'string', 'events.pushState: href should be type string')
+      window.history.pushState(HISTORY_OBJECT, null, href)
+      self.emitter.emit(self._events.NAVIGATE)
+    })
+
+    this.emitter.prependListener(this._events.REPLACESTATE, function (href) {
+      assert.equal(typeof href, 'string', 'events.replaceState: href should be type string')
+      window.history.replaceState(HISTORY_OBJECT, null, href)
+      self.emitter.emit(self._events.NAVIGATE)
+    })
+
+    window.onpopstate = function () {
+      self.emitter.emit(self._events.POPSTATE)
     }
 
-    function updateHistory (mode, href) {
-      if (href) window.history[mode + 'State']({}, null, href)
-      bus.emit('render')
-      setTimeout(function () {
-        scrollIntoView()
-      }, 0)
+    if (self._hrefEnabled) {
+      nanohref(function (location) {
+        var href = location.href
+        var currHref = window.location.href
+        if (href === currHref) return
+        self.emitter.emit(self._events.PUSHSTATE, href)
+      })
     }
-
-    rerender = nanoraf(function () {
-      if (hasPerformance && timingEnabled) {
-        window.performance.mark('choo:renderStart')
-      }
-      var newTree = router(createLocation())
-      tree = nanomorph(tree, newTree)
-      assert.notEqual(tree, newTree, 'choo.start: a different node type was returned as the root node on a rerender. Make sure that the root node is always the same type to prevent the application from being unmounted.')
-      if (hasPerformance && timingEnabled) {
-        window.performance.mark('choo:renderEnd')
-        window.performance.measure('choo:render', 'choo:renderStart', 'choo:renderEnd')
-      }
-    })
-
-    bus.prependListener('render', rerender)
-
-    documentReady(function () {
-      bus.emit('DOMContentLoaded')
-    })
-
-    tree = router(createLocation())
-
-    return tree
   }
 
-  function emit (eventName, data) {
-    bus.emit(eventName, data)
-  }
+  this.state.href = this._createLocation()
+  this._tree = this.router(this.state.href)
+  this.state.query = nanoquery(window.location.search)
+  assert.ok(this._tree, 'choo.start: no valid DOM node returned for location ' + this.state.href)
 
-  function mount (selector) {
-    var newTree = start()
-    documentReady(function () {
-      var root = document.querySelector(selector)
-      assert.ok(root, 'choo.mount: could not query selector: ' + selector)
-      nanomount(root, newTree)
-      tree = root
-    })
-  }
+  this.emitter.prependListener(self._events.RENDER, nanoraf(function () {
+    var renderTiming = nanotiming('choo.render')
 
-  function toString (location, _state) {
-    state = _state || {}
-    var html = router(location)
-    return html.toString()
-  }
+    self.state.href = self._createLocation()
+    var newTree = self.router(self.state.href)
+    assert.ok(newTree, 'choo.render: no valid DOM node returned for location ' + self.state.href)
+
+    assert.equal(self._tree.nodeName, newTree.nodeName, 'choo.render: The target node <' +
+      self._tree.nodeName.toLowerCase() + '> is not the same type as the new node <' +
+      newTree.nodeName.toLowerCase() + '>.')
+
+    var morphTiming = nanotiming('choo.morph')
+    nanomorph(self._tree, newTree)
+    morphTiming()
+
+    renderTiming()
+  }))
+
+  documentReady(function () {
+    self.emitter.emit(self._events.DOMCONTENTLOADED)
+  })
+
+  return this._tree
 }
 
-function scrollIntoView () {
-  var hash = window.location.hash
-  if (hash) {
-    try {
-      var el = document.querySelector(hash)
-      if (el) el.scrollIntoView(true)
-    } catch (e) {}
-  }
+Choo.prototype.mount = function mount (selector) {
+  assert.equal(typeof window, 'object', 'choo.mount: window was not found. .mount() must be called in a browser, use .toString() if running in Node')
+  assert.equal(typeof selector, 'string', 'choo.mount: selector should be type string')
+
+  var self = this
+
+  documentReady(function () {
+    var renderTiming = nanotiming('choo.render')
+    var newTree = self.start()
+
+    self._tree = document.querySelector(selector)
+    assert.ok(self._tree, 'choo.mount: could not query selector: ' + selector)
+    assert.equal(self._tree.nodeName, newTree.nodeName, 'choo.mount: The target node <' +
+      self._tree.nodeName.toLowerCase() + '> is not the same type as the new node <' +
+      newTree.nodeName.toLowerCase() + '>.')
+
+    var morphTiming = nanotiming('choo.morph')
+    nanomorph(self._tree, newTree)
+    morphTiming()
+
+    renderTiming()
+  })
 }
 
-function createLocation () {
-  var pathname = window.location.pathname.replace(/\/$/, '')
-  var hash = window.location.hash.replace(/^#/, '/')
-  return pathname + hash
+Choo.prototype.toString = function (location, state) {
+  this.state = xtend(this.state, state || {})
+
+  assert.notEqual(typeof window, 'object', 'choo.mount: window was found. .toString() must be called in Node, use .start() or .mount() if running in the browser')
+  assert.equal(typeof location, 'string', 'choo.toString: location should be type string')
+  assert.equal(typeof this.state, 'object', 'choo.toString: state should be type object')
+
+  this.state.href = location.replace(/\?*.$/, '')
+  this.state.query = nanoquery(location)
+  var html = this.router(location)
+  assert.ok(html, 'choo.toString: no valid value returned for the route ' + location)
+  return html.toString()
 }
 
-},{"assert":1,"document-ready":5,"nanobus":12,"nanohistory":13,"nanohref":14,"nanomorph":16,"nanomount":19,"nanoraf":20,"nanorouter":21}],"xhr":[function(require,module,exports){
+},{"assert":1,"document-ready":4,"nanobus":10,"nanohref":11,"nanolocation":12,"nanomorph":14,"nanoquery":17,"nanoraf":18,"nanorouter":19,"nanotiming":20,"scroll-to-anchor":26,"xtend":33}],"xhr":[function(require,module,exports){
 "use strict";
 var window = require("global/window")
 var isFunction = require("is-function")
@@ -3783,4 +3911,4 @@ function getXml(xhr) {
 
 function noop() {}
 
-},{"global/window":8,"is-function":11,"parse-headers":26,"xtend":34}]},{},[]);
+},{"global/window":6,"is-function":9,"parse-headers":23,"xtend":33}]},{},[]);
