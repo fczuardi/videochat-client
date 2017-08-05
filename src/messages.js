@@ -11,5 +11,8 @@ module.exports = {
         name: "Name",
         email: "Email",
         signup: "Signup"
+    },
+    embed: {
+        call: "Call"
     }
 };
