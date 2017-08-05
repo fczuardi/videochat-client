@@ -20,18 +20,36 @@ const apiCall: APICall = (body, cb) =>
     );
 
 const apiReducers: ChooMiddleware = (state, emitter) => {
+    emitter.on("api:room", () => {
+        const query = `
+        {
+            room {
+                apiKey
+                sessionId
+                token
+            }
+        }`;
+        return apiCall({query}, (err, resp, body) => {
+            if (err) {
+                emitter.emit('log:error', err)
+                return state;
+            }
+            state.room = body.data.room
+            emitter.emit("render")
+        })
+    }),
     emitter.on("api:signup", user => {
         const query = `
-mutation ($user: UserInput){
-  createUser(user: $user) {
-    id
-    name
-    email
-  }
-}`;
+        mutation ($user: UserInput){
+            createUser(user: $user) {
+                id
+                name
+                email
+            }
+        }`;
         const variables = { user };
-        apiCall({ query, variables }, (err, resp, body) => console.log(body));
         emitter.emit("log:info", user);
+        return apiCall({ query, variables }, (err, resp, body) => console.log(body));
     });
 };
 
