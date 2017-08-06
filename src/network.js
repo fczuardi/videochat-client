@@ -41,6 +41,9 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
         })
     }),
     emitter.on("opentok:initialize", ({apiKey, sessionId, token}) => {
+        console.log({apiKey})
+        console.log({sessionId})
+        console.log({token})
         opentok({apiKey, sessionId, token})
     }),
     emitter.on("api:signup", user => {
