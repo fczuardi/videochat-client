@@ -1,38 +1,42 @@
 // @flow
 const OT = require("@opentok/client");
-// Handling all of our errors here by alerting them
-function handleError(error) {
-    if (error) {
-        alert(error.message);
-    }
-}
 
 type Room = { apiKey: string, sessionId: string, token: string };
-type InitializeSession = (room: Room) => void;
-const initializeSession: InitializeSession = ({ apiKey, sessionId, token }) => {
+type InitializeSession = (room: Room, emitter) => void;
+const initializeSession: InitializeSession = ({ apiKey, sessionId, token }, emitter) => {
+    emitter.emit("render")
     if (!apiKey || !sessionId || !token) {
         return;
     }
-    var session = OT.initSession(apiKey, sessionId);
+    const handleResponse = (status) => (error) => {
+        if (error) {
+            alert(error.message);
+        }
+        if(status) {
+            emitter.emit("room:update", status)
+        }
+    }
+    const session = OT.initSession(apiKey, sessionId);
     // Connect to the session
-    session.connect(token, function(error) {
+    session.connect(token, (error) => {
         // If the connection is successful, publish to the session
         if (error) {
-            handleError(error);
+            handleResponse()(error);
         } else {
+            handleResponse("waiting")()
             // Subscribe to a newly created stream
-            session.on("streamCreated", function(event) {
+            session.on("streamCreated", (event) => {
                 // Create a publisher
-                var publisher = OT.initPublisher(
+                const publisher = OT.initPublisher(
                     "publisher",
                     {
                         insertMode: "append",
                         width: "100%",
                         height: "100%"
                     },
-                    handleError
+                    handleResponse()
                 );
-                session.publish(publisher, handleError);
+                session.publish(publisher, handleResponse());
                 session.subscribe(
                     event.stream,
                     "subscriber",
@@ -41,7 +45,7 @@ const initializeSession: InitializeSession = ({ apiKey, sessionId, token }) => {
                         width: "100%",
                         height: "100%"
                     },
-                    handleError
+                    handleResponse("connected")
                 );
             });
         }

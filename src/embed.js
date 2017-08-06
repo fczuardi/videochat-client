@@ -6,8 +6,10 @@ const app = require("choo")();
 const html = require("choo/html");
 const apiReducers = require("./network");
 const embedView = require("./views/embed");
+const uiReducer = require("./embedui");
 
 app.use(apiReducers);
+app.use(uiReducer);
 app.route("*", embedView);
 
 if (typeof document === "undefined" || !document.body) {

@@ -9,6 +9,7 @@ const homeView: ChooView = (state, emit) => {
     };
     return html`
 <div id="videos">
+    <p> ${state.roomStatus} </p>
     <div id="publisher"></div>
     <div id="subscriber"></div>
     <button onclick=${requestRoom}>${messages.embed.call}</button>
