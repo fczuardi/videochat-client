@@ -7,7 +7,6 @@ const homeView: ChooView = (state, emit) => {
     const requestRoom = (event) => {
         emit("api:room")
     }
-    console.log({state})
     return html`
 <div id="videos">
     <div id="publisher"></div>
