@@ -4,7 +4,6 @@ module.exports = { "app": { "html": { "title": "App page title", "themeColor": "
 var config = require("../config.toml");
 module.exports = config;
 },{"../config.toml":1}],3:[function(require,module,exports){
-
 //      
 
 
