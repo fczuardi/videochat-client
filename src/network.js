@@ -30,25 +30,26 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
                 token
             }
         }`;
-        emitter.emit("room:update", "requesting")
+        emitter.emit("room:update", "requesting");
         return apiCall({ query }, (err, resp, body) => {
             if (err) {
                 emitter.emit("log:error", err);
                 return state;
             }
-            if(!body.data.room) {
-                emitter.emit("room:update", "disconnected")
+            if (!body.data.room) {
+                emitter.emit("room:update", "disconnected");
                 return state;
             }
-            state.room = body.data.room;
-            emitter.emit("opentok:initialize", state.room);
+            emitter.emit("opentok:initialize", body.data.room);
         });
     });
-    emitter.on("opentok:initialize", ({ apiKey, sessionId, token }) => {
+    emitter.on("opentok:initialize", room => {
+        const { apiKey, sessionId, token } = room;
         console.log({ apiKey });
         console.log({ sessionId });
         console.log({ token });
-        opentok({ apiKey, sessionId, token }, emitter);
+        state.room = room;
+        opentok({ apiKey, sessionId, token }, emitter, state.publishFirst);
     });
     emitter.on("api:signup", user => {
         const query = `
