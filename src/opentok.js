@@ -2,7 +2,7 @@
 const OT = require("@opentok/client");
 
 type Room = { apiKey: string, sessionId: string, token: string };
-type InitializeSession = (room: Room, emitter) => void;
+type InitializeSession = (room: Room, emitter: Object) => void;
 const initializeSession: InitializeSession = ({ apiKey, sessionId, token }, emitter) => {
     emitter.emit("render")
     if (!apiKey || !sessionId || !token) {
