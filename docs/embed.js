@@ -1,36 +1,26 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "http://localhost:4000/graphql/" } };
 },{}],2:[function(require,module,exports){
+var config = require("../config.toml");
+module.exports = config;
+},{"../config.toml":1}],3:[function(require,module,exports){
+
 //      
 
 
 var app = require("choo")();
-var log = require("choo-log");
 var html = require("choo/html");
-var setupView = require("./views/setup");
-var homeView = require("./views/home");
 var apiReducers = require("./network");
-var notificationsReducer = require("./notifications");
+var embedView = require("./views/embed");
 
-var mainView = function (state, emit) {
-    return state.notificationPermission !== "granted" ? setupView(state, emit) : homeView(state, emit);
-};
-
-// app.use(log());
 app.use(apiReducers);
-app.use(notificationsReducer);
-app.route("*", mainView);
-app.route("#setup", setupView);
-app.route("#home", homeView);
+app.route("*", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./network":5,"./notifications":6,"./views/home":8,"./views/setup":9,"choo":undefined,"choo-log":undefined,"choo/html":undefined}],3:[function(require,module,exports){
-var config = require("../config.toml");
-module.exports = config;
-},{"../config.toml":1}],4:[function(require,module,exports){
+},{"./network":5,"./views/embed":7,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 module.exports = {
     setup: {
         title: "Setup",
@@ -103,23 +93,7 @@ var apiReducers = function (state, emitter) {
 };
 
 module.exports = apiReducers;
-},{"./config":3,"./opentok":7,"xhr":undefined}],6:[function(require,module,exports){
-//      
-
-
-var notifications = function (state, emitter) {
-    state.notificationPermission = window.Notification.permission;
-    emitter.on("notification:update", function (permission) {
-        state.notificationPermission = permission;
-        if (permission === "denied") {
-            return emitter.emit(state.events.RENDER);
-        }
-        emitter.emit("pushState", "#home");
-    });
-};
-
-module.exports = notifications;
-},{}],7:[function(require,module,exports){
+},{"./config":2,"./opentok":6,"xhr":undefined}],6:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 // Handling all of our errors here by alerting them
@@ -164,23 +138,8 @@ var initializeSession = function (_ref) {
 };
 
 module.exports = initializeSession;
-},{"@opentok/client":undefined}],8:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    TBD\n</div>"], ["\n<div>\n    TBD\n</div>"]);
-
-function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-//      
-
-var html = require("choo/html");
-
-var homeView = function () {
-    return html(_templateObject);
-};
-
-module.exports = homeView;
-},{"choo/html":undefined}],9:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"], ["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
+},{"@opentok/client":undefined}],7:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["\n<div id=\"videos\">\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <button onclick=", ">", "</button>\n</div>"], ["\n<div id=\"videos\">\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <button onclick=", ">", "</button>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -189,19 +148,12 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 var html = require("choo/html");
 var messages = require("../messages");
 
-var permissionInfoView = function () {
-    return html(_templateObject, messages.setup.permissionDenied, messages.back);
-};
-
-var setupView = function (state, emit) {
-    var notificationPrompt = function () {
-        return window.Notification.requestPermission().then(function (permission) {
-            emit("notification:update", permission === "granted" ? permission : "denied");
-        });
+var homeView = function (state, emit) {
+    var requestRoom = function (event) {
+        emit("api:room");
     };
-
-    return html(_templateObject2, messages.setup.title, state.notificationPermission, state.notificationPermission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notificationPermission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
+    return html(_templateObject, requestRoom, messages.embed.call);
 };
 
-module.exports = setupView;
-},{"../messages":4,"choo/html":undefined}]},{},[2]);
+module.exports = homeView;
+},{"../messages":4,"choo/html":undefined}]},{},[3]);

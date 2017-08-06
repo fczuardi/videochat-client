@@ -39,12 +39,14 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             emitter.emit("render");
             emitter.emit("opentok:initialize", state.room);
         });
-    }), emitter.on("opentok:initialize", ({ apiKey, sessionId, token }) => {
+    });
+    emitter.on("opentok:initialize", ({ apiKey, sessionId, token }) => {
         console.log({ apiKey });
         console.log({ sessionId });
         console.log({ token });
         opentok({ apiKey, sessionId, token });
-    }), emitter.on("api:signup", user => {
+    });
+    emitter.on("api:signup", user => {
         const query = `
         mutation ($user: UserInput){
             createUser(user: $user) {
@@ -61,6 +63,4 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
     });
 };
 
-module.exports = {
-    apiReducers
-};
+module.exports = apiReducers;

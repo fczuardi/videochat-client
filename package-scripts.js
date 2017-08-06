@@ -15,6 +15,13 @@ const appArgs = [
     ...transforms
 ];
 
+const embedArgs = [
+    "entry src/embed.js",
+    "outfile docs/embed.js",
+    "no-bundle-external",
+    ...transforms
+];
+
 const appHtmlArgs = Object.keys(config.app.html).map(
     k => `--data-${k}="${config.app.html[k]}"`
 );
@@ -24,17 +31,35 @@ module.exports = {
         default: "nps build && http-server docs",
         dev: {
             app:
-                "budo --dir src src/app.js --" + ["", ...transforms].join(" --")
+                "budo --dir src src/app.js --" +
+                ["", ...transforms].join(" --"),
+            embed:
+                "budo --dir src src/embed.js --" +
+                ["", ...transforms].join(" --")
         },
-        build: concurrent.nps("bundle.app", "bundle.vendors", "html"),
+        build: concurrent.nps(
+            "bundle.app",
+            "bundle.embed",
+            "bundle.vendors",
+            "html.app",
+            "html.embed"
+        ),
         bundle: {
             app: "browserify " + ["", ...appArgs].join(" --"),
+            embed: "browserify " + ["", ...embedArgs].join(" --"),
             vendors:
                 "browserify " +
                 ["", ...vendors].join(" -r ") +
                 " --outfile docs/vendors.js"
         },
-        html: "variable-replacer index.html docs " + appHtmlArgs.join(" "),
+        html: {
+            app:
+                "variable-replacer index.html docs/app.html --data-client=app" +
+                appHtmlArgs.join(" "),
+            embed:
+                "variable-replacer index.html docs/embed.html --data-client=embed" +
+                appHtmlArgs.join(" ")
+        },
         test: "flow",
         fmt: {
             default: "prettier --write --tab-width 4",
