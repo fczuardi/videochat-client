@@ -40,6 +40,7 @@
     "variable-replacer": "^1.5.1"
   },
   "dependencies": {
+    "@opentok/client": "^2.11.6",
     "choo": "^6.0.0-4",
     "choo-log": "^7.2.1",
     "xhr": "^2.4.0"
