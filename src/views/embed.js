@@ -13,6 +13,7 @@ const homeView: ChooView = (state, emit) => {
     <div id="publisher"></div>
     <div id="subscriber"></div>
     <button onclick=${requestRoom}>${messages.embed.call}</button>
+    <textarea>${JSON.stringify(state.room)}</textarea>
 </div>`;
 };
 
