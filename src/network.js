@@ -3,6 +3,7 @@ import type { ChooMiddleware } from "./app";
 
 const xhr = require("xhr");
 const config = require("./config");
+const opentok = require("./opentok")
 
 type APICall = (body: Object, cb: Function) => any;
 const apiCall: APICall = (body, cb) =>
@@ -36,7 +37,11 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             }
             state.room = body.data.room
             emitter.emit("render")
+            emitter.emit("opentok:initialize", state.room)
         })
+    }),
+    emitter.on("opentok:initialize", ({apiKey, sessionId, token}) => {
+        opentok({apiKey, sessionId, token})
     }),
     emitter.on("api:signup", user => {
         const query = `
