@@ -2,7 +2,7 @@ require("toml-require").install();
 const config = require("./config.toml");
 const { concurrent } = require("nps-utils");
 
-const vendors = ["choo", "choo/html", "choo-log", "xhr"];
+const vendors = ["choo", "choo/html", "choo-log", "xhr", "@opentok/client"];
 
 const transforms = ["unflowify", "tomlify", "es2040"].map(
     t => "transform " + t
@@ -38,7 +38,7 @@ module.exports = {
         test: "flow",
         fmt: {
             default: "prettier --write --tab-width 4",
-            all: 'prettier --write --tab-width 4 "src/**/*.js"'
+            all: 'prettier --write --tab-width 4 "src/**/*.js" "*.js"'
         }
     }
 };
