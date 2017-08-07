@@ -17,6 +17,7 @@ npm start
 ### Launch dev local webserver
 ```
 npm start dev.app
+npm start dev.embed
 ```
 
 [api]: https://github.com/fczuardi/videochat-api
