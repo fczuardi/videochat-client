@@ -55,10 +55,10 @@ module.exports = {
         },
         html: {
             app:
-                "variable-replacer index.html docs/app.html --data-client=app" +
+                "variable-replacer index.html docs/app.html --data-client=app " +
                 appHtmlArgs.join(" "),
             embed:
-                "variable-replacer index.html docs/embed.html --data-client=embed" +
+                "variable-replacer index.html docs/embed.html --data-client=embed " +
                 appHtmlArgs.join(" ")
         },
         cp: {
