@@ -8,12 +8,16 @@ const homeView: ChooView = (state, emit) => {
         emit("api:room");
     };
     return html`
-<div id="videos">
-    <p> ${state.roomStatus} </p>
-    <div id="publisher"></div>
-    <div id="subscriber"></div>
-    <button onclick=${requestRoom}>${messages.embed.call}</button>
-    <textarea>${JSON.stringify(state.room)}</textarea>
+<div>
+    <div>
+        <p> ${state.ui.roomStatus} </p>
+        <button onclick=${requestRoom}>${messages.embed.call}</button>
+        <textarea>${JSON.stringify(state.chat.room)}</textarea>
+    </div>
+    <div id="videos">
+        <div id="publisher"></div>
+        <div id="subscriber"></div>
+    </div>
 </div>`;
 };
 

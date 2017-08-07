@@ -1,18 +1,17 @@
 // @flow
 import type { ChooMiddleware } from "./app";
 
-// click(call) -> requesting
-// requesting -> waiting (esperando o outro peer)
-// requesting -> connected (outro peer conectado)
-
 type RoomStatus = "disconnected" | "requesting" | "waiting" | "connected";
 const uiReducer: ChooMiddleware = (state, emitter) => {
-    state.roomStatus = "disconnected";
+    state.ui = {
+        roomSatus: 'disconnected'
+    },
     emitter.on("room:update", newStatus => {
-        state.roomStatus = newStatus;
+        state.ui.roomStatus = newStatus;
         if (newStatus !== "connected") {
-            emitter.emit(state.events.RENDER);
+            return emitter.emit(state.events.RENDER);
         }
+        return console.log({newStatus})
     });
 };
 
