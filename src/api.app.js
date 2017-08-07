@@ -51,10 +51,7 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             if (err) {
                 return console.error(err);
             }
-            return console.log(
-                "webPush data sent sucessfully",
-                body.data.updateUser
-            );
+            return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
         });
     });
 };

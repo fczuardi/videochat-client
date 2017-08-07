@@ -34,7 +34,7 @@ var apiReducers = function (state, emitter) {
             if (err) {
                 return console.error(err);
             }
-            return console.log("webPush data sent sucessfully", body.data.updateUser);
+            return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
         });
     });
 };
@@ -111,6 +111,9 @@ module.exports = {
         userId: "Your user ID",
         userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
         login: "Login"
+    },
+    home: {
+        user: "User"
     },
     loading: "please wait...",
     form: {
@@ -311,7 +314,10 @@ module.exports = urlBase64ToUint8Array;
 //      
 
 
+var extend = require('xtend');
+
 var USER_LOGIN = "user:login";
+var USER_UPDATED = "user:updated";
 
 var userReducer = function (state, emitter) {
     state.user = {
@@ -319,23 +325,31 @@ var userReducer = function (state, emitter) {
     };
 
     state.events.USER_LOGIN = USER_LOGIN;
+    state.events.USER_UPDATED = USER_UPDATED;
 
     emitter.on(state.events.USER_LOGIN, function (id) {
         state.user.id = id;
-        emitter.emit(state.events.RENDER);
         emitter.emit(state.events.WORKER_REGISTER);
+    });
+
+    emitter.on(state.events.USER_UPDATED, function (user) {
+        console.log({ user: user });
+        state.user = extend(state.user, user);
+        emitter.emit(state.events.RENDER);
     });
 };
 
 module.exports = userReducer;
-},{}],13:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
+},{"xtend":undefined}],13:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <div>\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 //      
 
+
 var html = require("choo/html");
+var messages = require("../messages");
 
 var homeView = function (state, emit) {
     var onSubmit = function (event) {
@@ -344,11 +358,11 @@ var homeView = function (state, emit) {
         state.publishFirst = true;
         emit("opentok:initialize", room);
     };
-    return html(_templateObject, onSubmit);
+    return html(_templateObject, messages.home.user, state.user.name, state.user.email, onSubmit);
 };
 
 module.exports = homeView;
-},{"choo/html":undefined}],14:[function(require,module,exports){
+},{"../messages":6,"choo/html":undefined}],14:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }

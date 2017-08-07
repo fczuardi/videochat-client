@@ -1,6 +1,8 @@
 // @flow
 import type { ChooView } from "../app";
+
 const html = require("choo/html");
+const messages = require("../messages")
 
 const homeView: ChooView = (state, emit) => {
     const onSubmit = event => {
@@ -11,6 +13,10 @@ const homeView: ChooView = (state, emit) => {
     };
     return html`
 <div>
+    <div>
+        <dt>${messages.home.user}</dt>
+        <dd>${state.user.name} (${state.user.email})</dd>
+    </div>
     <div id="publisher"></div>
     <div id="subscriber"></div>
     <form onsubmit=${onSubmit}>
