@@ -8,10 +8,12 @@ var _require = require("./network"),
     apiCall = _require.apiCall;
 
 var API_PUSHSERVER_PUBKEY = "api:pushServer:pubKey";
+var API_USER_UPDATE = "api:updateUser";
 
 var apiReducers = function (state, emitter) {
     state.api = {};
     state.events.API_PUSHSERVER_PUBKEY = API_PUSHSERVER_PUBKEY;
+    state.events.API_USER_UPDATE = API_USER_UPDATE;
 
     emitter.on(state.events.API_PUSHSERVER_PUBKEY, function () {
         var query = "\n        {\n            pushServer {\n                pubKey\n            }\n        }";
@@ -25,6 +27,16 @@ var apiReducers = function (state, emitter) {
             return emitter.emit(state.events.WORKER_SERVERKEY, body.data.pushServer.pubKey);
         });
     });
+
+    emitter.on(state.events.API_USER_UPDATE, function (variables) {
+        var query = "\n        mutation($id:ID!, $update: UserInput) {\n            updateUser(id:$id, update:$update){\n                id\n                name\n                email\n                groups\n                webPushInfo {\n                    endpoint\n                    key\n                    auth\n                }\n            }\n        }";
+        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
+            if (err) {
+                return console.error(err);
+            }
+            return console.log("webPush data sent sucessfully", body.data.updateUser);
+        });
+    });
 };
 
 module.exports = apiReducers;
@@ -36,18 +48,27 @@ var app = require("choo")();
 var html = require("choo/html");
 var notificationsReducer = require("./notifications");
 var serviceWorkerReducer = require("./serviceWorker");
-var apiReducers = require("./api.app");
+var apiReducer = require("./api.app");
+var userReducer = require("./user");
 var chatReducer = require("./chat");
 var setupView = require("./views/setup");
+var loginView = require("./views/login");
 var homeView = require("./views/home");
 
 var mainView = function (state, emit) {
-    return state.notifications.permission !== "granted" ? setupView(state, emit) : homeView(state, emit);
+    if (state.notifications.permission !== "granted") {
+        return setupView(state, emit);
+    }
+    if (!state.user.id) {
+        return loginView(state, emit);
+    }
+    return homeView(state, emit);
 };
 
 app.use(notificationsReducer);
 app.use(serviceWorkerReducer);
-app.use(apiReducers);
+app.use(apiReducer);
+app.use(userReducer);
 app.use(chatReducer);
 app.route("*", mainView);
 app.route("#setup", setupView);
@@ -57,7 +78,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./notifications":8,"./serviceWorker":10,"./views/home":12,"./views/setup":13,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./notifications":8,"./serviceWorker":10,"./user":12,"./views/home":13,"./views/login":14,"./views/setup":15,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 
@@ -85,6 +106,11 @@ module.exports = {
         continue: "Continue",
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
+    },
+    login: {
+        userId: "Your user ID",
+        userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
+        login: "Login"
     },
     loading: "please wait...",
     form: {
@@ -201,6 +227,7 @@ module.exports = initializeSession;
 
 var toUint8Array = require("./urlBase64ToUint8Array");
 
+var WORKER_REGISTER = "worker:register";
 var WORKER_REGISTERED = "worker:registered";
 var WORKER_SERVERKEY = "worker:pushServer:key";
 var WORKER_SUBSCRIPTION_INFO = "worker:subscription:info";
@@ -210,19 +237,26 @@ var workerFilePath = "./sw.js";
 
 var worker = function (state, emitter) {
     state.worker = {
-        registration: null,
-        subscription: null
+        registration: null
     };
 
+    state.events.WORKER_REGISTER = WORKER_REGISTER;
     state.events.WORKER_REGISTERED = WORKER_REGISTERED;
     state.events.WORKER_SERVERKEY = WORKER_SERVERKEY;
     state.events.WORKER_SUBSCRIPTION_INFO = WORKER_SUBSCRIPTION_INFO;
     state.events.WORKER_SUBSCRIBED = WORKER_SUBSCRIBED;
 
+    emitter.on(state.events.WORKER_REGISTER, function () {
+        if (!navigator.serviceWorker) {
+            return console.error("Browser doesnt have service worker support");
+        }
+        navigator.serviceWorker.register(workerFilePath).then(function (registration) {
+            return emitter.emit(state.events.WORKER_REGISTERED, registration);
+        }, console.error);
+    });
+
     emitter.on(state.events.WORKER_REGISTERED, function (registration) {
         state.worker.registration = registration;
-        console.log({ registration: registration });
-        // get push subscription
         return registration.pushManager.getSubscription().then(function (subscription) {
             return emitter.emit(state.events.WORKER_SUBSCRIPTION_INFO, subscription);
         });
@@ -232,34 +266,29 @@ var worker = function (state, emitter) {
         if (subscription) {
             return emitter.emit(state.events.WORKER_SUBSCRIBED, subscription);
         }
-        console.log("eventName", state.events.API_PUSHSERVER_PUBKEY);
         return emitter.emit(state.events.API_PUSHSERVER_PUBKEY);
     });
 
     emitter.on(state.events.WORKER_SERVERKEY, function (serverKey) {
-        console.log({ serverKey: serverKey });
         var options = {
             userVisibleOnly: true,
             applicationServerKey: toUint8Array(serverKey)
         };
-        console.log({ options: options });
         return state.worker.registration.pushManager.subscribe(options).then(function (subscription) {
             return emitter.emit(state.events.WORKER_SUBSCRIBED, subscription);
         });
     });
 
     emitter.on(state.events.WORKER_SUBSCRIBED, function (subscription) {
-        console.log({ subscription: subscription });
-        state.worker.subscription = subscription;
-        emitter.emit(state.events.RENDER);
+        var keyBuffer = subscription.getKey("p256dh");
+        var authBuffer = subscription.getKey("auth");
+        var endpoint = subscription.endpoint;
+        var key = btoa(String.fromCharCode.apply(null, new Uint8Array(keyBuffer)));
+        var auth = btoa(String.fromCharCode.apply(null, new Uint8Array(authBuffer)));
+        var webPushInfo = { endpoint: endpoint, key: key, auth: auth };
+        var variables = { id: state.user.id, update: { webPushInfo: webPushInfo } };
+        emitter.emit(state.events.API_USER_UPDATE, variables);
     });
-
-    if (!navigator.serviceWorker) {
-        return console.error("Browser doesnt have service worker support");
-    }
-    navigator.serviceWorker.register(workerFilePath).then(function (registration) {
-        return emitter.emit(state.events.WORKER_REGISTERED, registration);
-    }, console.error);
 };
 
 module.exports = worker;
@@ -279,6 +308,27 @@ function urlBase64ToUint8Array(base64String) {
 }
 module.exports = urlBase64ToUint8Array;
 },{}],12:[function(require,module,exports){
+//      
+
+
+var USER_LOGIN = "user:login";
+
+var userReducer = function (state, emitter) {
+    state.user = {
+        id: null
+    };
+
+    state.events.USER_LOGIN = USER_LOGIN;
+
+    emitter.on(state.events.USER_LOGIN, function (id) {
+        state.user.id = id;
+        emitter.emit(state.events.RENDER);
+        emitter.emit(state.events.WORKER_REGISTER);
+    });
+};
+
+module.exports = userReducer;
+},{}],13:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -298,7 +348,29 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"choo/html":undefined}],13:[function(require,module,exports){
+},{"choo/html":undefined}],14:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
+
+function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+//      
+
+var html = require("choo/html");
+var messages = require("../messages");
+
+var loginView = function (state, emit) {
+    var onSubmit = function (event) {
+        event.preventDefault();
+        var id = event.target.elements[0].value.trim();
+        console.log({ id: id });
+        console.log(state.events);
+        emit(state.events.USER_LOGIN, id);
+    };
+    return html(_templateObject, onSubmit, messages.login.userId, messages.login.userIdPlaceholder, messages.login.login);
+};
+
+module.exports = loginView;
+},{"../messages":6,"choo/html":undefined}],15:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"], ["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 

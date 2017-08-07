@@ -6,19 +6,27 @@ const app = require("choo")();
 const html = require("choo/html");
 const notificationsReducer = require("./notifications");
 const serviceWorkerReducer = require("./serviceWorker");
-const apiReducers = require("./api.app");
+const apiReducer = require("./api.app");
+const userReducer = require("./user");
 const chatReducer = require("./chat");
 const setupView = require("./views/setup");
+const loginView = require("./views/login");
 const homeView = require("./views/home");
 
-const mainView: ChooView = (state, emit) =>
-    state.notifications.permission !== "granted"
-        ? setupView(state, emit)
-        : homeView(state, emit);
+const mainView: ChooView = (state, emit) => {
+    if (state.notifications.permission !== "granted") {
+        return setupView(state, emit);
+    }
+    if (!state.user.id) {
+        return loginView(state, emit);
+    }
+    return homeView(state, emit);
+};
 
 app.use(notificationsReducer);
 app.use(serviceWorkerReducer);
-app.use(apiReducers);
+app.use(apiReducer);
+app.use(userReducer);
 app.use(chatReducer);
 app.route("*", mainView);
 app.route("#setup", setupView);

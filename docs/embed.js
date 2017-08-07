@@ -73,6 +73,11 @@ module.exports = {
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
     },
+    login: {
+        userId: "Your user ID",
+        userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
+        login: "Login"
+    },
     loading: "please wait...",
     form: {
         name: "Name",
