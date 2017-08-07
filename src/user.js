@@ -31,7 +31,6 @@ const userReducer: ChooMiddleware = (state, emitter) => {
     });
 
     emitter.on(state.events.USER_UPDATED, user => {
-        console.log({user});
         state.user = extend(state.user, user);
         emitter.emit(state.events.RENDER);
     });
