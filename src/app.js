@@ -4,9 +4,10 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 
 const app = require("choo")();
 const html = require("choo/html");
-// const apiReducers = require("./api.app");
 const notificationsReducer = require("./notifications");
-const chatReducers = require("./chat");
+const serviceWorkerReducer = require("./serviceWorker");
+const apiReducers = require("./api.app");
+const chatReducer = require("./chat");
 const setupView = require("./views/setup");
 const homeView = require("./views/home");
 
@@ -15,9 +16,10 @@ const mainView: ChooView = (state, emit) =>
         ? setupView(state, emit)
         : homeView(state, emit);
 
-// app.use(apiReducers);
 app.use(notificationsReducer);
-app.use(chatReducers);
+app.use(serviceWorkerReducer);
+app.use(apiReducers);
+app.use(chatReducer);
 app.route("*", mainView);
 app.route("#setup", setupView);
 app.route("#home", homeView);

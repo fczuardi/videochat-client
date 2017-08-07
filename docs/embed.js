@@ -4,7 +4,7 @@ module.exports = { "app": { "html": { "title": "App page title", "themeColor": "
 //      
 
 
-var _require = require('./network'),
+var _require = require("./network"),
     apiCall = _require.apiCall;
 
 var apiReducers = function (state, emitter) {
@@ -171,7 +171,7 @@ module.exports = initializeSession;
 
 var uiReducer = function (state, emitter) {
     state.ui = {
-        roomSatus: 'disconnected'
+        roomSatus: "disconnected"
     }, emitter.on("room:update", function (newStatus) {
         state.ui.roomStatus = newStatus;
         if (newStatus !== "connected") {

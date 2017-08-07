@@ -21,4 +21,4 @@ const apiCall: APICall = (body, cb) =>
 
 module.exports = {
     apiCall
-}
+};

@@ -11,6 +11,6 @@ const chatReducer: ChooMiddleware = (state, emitter) => {
         state.chat.room = room;
         opentok(room, emitter, state.publishFirst);
     });
-}
+};
 
 module.exports = chatReducer;

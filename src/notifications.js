@@ -2,10 +2,9 @@
 import type { ChooMiddleware } from "./app";
 
 const notifications: ChooMiddleware = (state, emitter) => {
-    state.notifications = {
+    (state.notifications = {
         permission: window.Notification.permission
-    },
-    emitter.on("notification:update", permission => {
+    }), emitter.on("notification:update", permission => {
         state.notifications.permission = permission;
         if (permission === "denied") {
             return emitter.emit(state.events.RENDER);

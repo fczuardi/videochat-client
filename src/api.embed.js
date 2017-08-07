@@ -1,12 +1,10 @@
 // @flow
 import type { ChooMiddleware } from "./app";
 
-const {apiCall} = require('./network')
+const { apiCall } = require("./network");
 
 const apiReducers: ChooMiddleware = (state, emitter) => {
-    state.api = {
-    },
-    emitter.on("api:room", () => {
+    (state.api = {}), emitter.on("api:room", () => {
         const query = `
         {
             room {
@@ -29,4 +27,3 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
 };
 
 module.exports = apiReducers;
-

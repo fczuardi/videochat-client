@@ -1,27 +1,34 @@
 // @flow
 import type { ChooMiddleware } from "./app";
 
-const {apiCall} = require('./network')
+const { apiCall } = require("./network");
+
+const API_PUSHSERVER_PUBKEY = "api:pushServer:pubKey";
 
 const apiReducers: ChooMiddleware = (state, emitter) => {
-    state.api = {
-    },
-    emitter.on("api:signup", user => {
+    state.api = {};
+    state.events.API_PUSHSERVER_PUBKEY = API_PUSHSERVER_PUBKEY;
+
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, () => {
         const query = `
-        mutation ($user: UserInput){
-            createUser(user: $user) {
-                id
-                name
-                email
+        {
+            pushServer {
+                pubKey
             }
         }`;
-        const variables = { user };
-        return apiCall({ query, variables }, (err, resp, body) =>
-            console.log(body)
-        );
+        return apiCall({ query }, (err, resp, body) => {
+            if (err || !body.data.pushServer) {
+                if (err) {
+                    console.error(err);
+                }
+                return console.error("API return dont have a pubkey value");
+            }
+            return emitter.emit(
+                state.events.WORKER_SERVERKEY,
+                body.data.pushServer.pubKey
+            );
+        });
     });
 };
 
 module.exports = apiReducers;
-
-

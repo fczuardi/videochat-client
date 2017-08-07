@@ -42,7 +42,8 @@ module.exports = {
             "bundle.embed",
             "bundle.vendors",
             "html.app",
-            "html.embed"
+            "html.embed",
+            "cp.worker"
         ),
         bundle: {
             app: "browserify " + ["", ...appArgs].join(" --"),
@@ -59,6 +60,9 @@ module.exports = {
             embed:
                 "variable-replacer index.html docs/embed.html --data-client=embed" +
                 appHtmlArgs.join(" ")
+        },
+        cp: {
+            worker: "cpy src/sw.js docs"
         },
         test: "flow",
         fmt: {
