@@ -11,7 +11,7 @@ var setupView = require("./views/setup");
 var homeView = require("./views/home");
 
 var mainView = function (state, emit) {
-    return state.notificationPermission !== "granted" ? setupView(state, emit) : homeView(state, emit);
+    return state.notifications.permission !== "granted" ? setupView(state, emit) : homeView(state, emit);
 };
 
 // app.use(apiReducers);

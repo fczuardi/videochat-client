@@ -11,7 +11,7 @@ const setupView = require("./views/setup");
 const homeView = require("./views/home");
 
 const mainView: ChooView = (state, emit) =>
-    state.notificationPermission !== "granted"
+    state.notifications.permission !== "granted"
         ? setupView(state, emit)
         : homeView(state, emit);
 
