@@ -49,6 +49,12 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             if (err) {
                 return emitter.emit(state.events.ERROR_API, err);
             }
+            if (body.errors) {
+                return emitter.emit(
+                    state.events.ERROR_API,
+                    new Error(body.errors.map(err => err.message).join(", "))
+                );
+            }
             return emitter.emit(
                 state.events.USER_UPDATED,
                 body.data.updateUser

@@ -1,3 +1,26 @@
+var onPush = function(pushEvent) {
+    console.log(pushEvent.data.text());
+    var data = pushEvent.data.json();
+    pushEvent.waitUntil(
+        self.registration.showNotification(data.title, data.options)
+    );
+};
+self.addEventListener("push", onPush);
+
+var onNotificationClick = function(event) {
+    console.log(event.type);
+    console.log(event.action);
+    console.log(event.notification);
+    console.log(event.notification.data);
+    console.log(event.notification.body);
+};
+self.addEventListener("notificationclick", onNotificationClick);
+
+var onNotificationClose = function(event) {
+    console.log("user dismissed");
+};
+self.addEventListener("notificationclose", onNotificationClose);
+
 var logSwEvent = function(event) {
     switch (event.type) {
         case "fetch":
@@ -6,27 +29,6 @@ var logSwEvent = function(event) {
             return console.log(event.type);
     }
 };
-
-var onPush = function(event) {
-    console.log("push event");
-    console.log(push);
-    const pushData = push.data;
-    console.log({ pushData });
-    const title = "foo";
-    const options = {
-        body: "bar"
-    };
-    const notification = new Notification(title, options);
-    notification.addEventListener("click", function(event) {
-        console.log("notification click event");
-        console.log(event);
-    });
-};
-
-self.addEventListener("push", onPush);
-
 self.addEventListener("install", logSwEvent);
 self.addEventListener("fetch", logSwEvent);
 self.addEventListener("activate", logSwEvent);
-self.addEventListener("notificationclose", logSwEvent);
-self.addEventListener("notificationclick", logSwEvent);
