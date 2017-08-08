@@ -1,7 +1,7 @@
 // @flow
 import type { ChooView } from "../app";
 const html = require("choo/html");
-const messages = require("../messages");
+const messages = require("../messages").embed.home;
 
 const homeView: ChooView = (state, emit) => {
     const requestRoom = event => {
@@ -14,8 +14,9 @@ const homeView: ChooView = (state, emit) => {
 <div>
     <div>
         ${errorMsg}
+        ${state.params.groupId}
         <p> ${state.ui.roomStatus} </p>
-        <button onclick=${requestRoom}>${messages.embed.call}</button>
+        <button onclick=${requestRoom}>${messages.call}</button>
         <textarea>${JSON.stringify(state.chat.room)}</textarea>
     </div>
     <div id="videos">

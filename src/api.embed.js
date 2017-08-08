@@ -31,6 +31,31 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             return emitter.emit(state.events.CHAT_INIT, { room, publishFirst });
         });
     });
+    emitter.on(state.events.API_NOTIFYGROUP, ({ groupId, room }) => {
+        const query = `
+        mutation($groupId:ID!, $payload:String){
+            notifyUserGroup(id:$groupId, payload:$payload)
+        }`;
+        const roomEncoded = JSON.stringify(room);
+        const payload = JSON.stringify({
+            title: "Support call",
+            options: {
+                body: `From group ${groupId}`,
+                data: room
+            }
+        });
+        const variables = { groupId, payload };
+        return apiCall({ query, variables }, (err, resp, body) => {
+            if (err) {
+                emitter.emit(state.events.ERROR_API, err);
+                return emitter.emit(
+                    state.events.CHAT_ROOM_UPDATE,
+                    "disconnected"
+                );
+            }
+            return console.log(body.data);
+        });
+    });
 };
 
 module.exports = apiReducers;

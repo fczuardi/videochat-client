@@ -1,4 +1,13 @@
 module.exports = {
+    embed: {
+        default: {
+            title: "Page not found",
+            description: "maybe you forgot to include the goup ID"
+        },
+        home: {
+            call: "Call"
+        }
+    },
     setup: {
         title: "Setup",
         description: "Please allow notifications from this app.",
@@ -19,8 +28,5 @@ module.exports = {
         name: "Name",
         email: "Email",
         signup: "Signup"
-    },
-    embed: {
-        call: "Call"
     }
 };

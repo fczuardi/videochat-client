@@ -8,11 +8,8 @@ var onPush = function(pushEvent) {
 self.addEventListener("push", onPush);
 
 var onNotificationClick = function(event) {
-    console.log(event.type);
-    console.log(event.action);
-    console.log(event.notification);
-    console.log(event.notification.data);
-    console.log(event.notification.body);
+    var room = event.notification.data;
+    console.log({ room });
 };
 self.addEventListener("notificationclick", onNotificationClick);
 

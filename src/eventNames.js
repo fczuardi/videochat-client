@@ -12,6 +12,7 @@ const eventNames = {
     API_ROOM: "api:room",
     API_PUSHSERVER_PUBKEY: "api:pushServer:pubKey",
     API_USER_UPDATE: "api:updateUser",
+    API_NOTIFYGROUP: "api:notifyGroup",
 
     CHAT_INIT: "chat:init",
     CHAT_ROOM_UPDATE: "chat:room:update",
