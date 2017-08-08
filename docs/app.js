@@ -102,6 +102,17 @@ var chatReducer = function (state, emitter) {
         state.publishFirst = publishFirst;
         opentok(state, emitter);
     });
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (status) {
+        console.log("Room update", status, state.chat.publishFirst);
+        if (status !== "waiting" || state.chat.publishFirst) {
+            return null;
+        }
+        return emitter.emit(state.events.API_NOTIFYGROUP, {
+            groupId: state.params.groupId,
+            room: state.chat.room
+        });
+    });
 };
 
 module.exports = chatReducer;
@@ -151,6 +162,7 @@ var eventNames = {
     API_ROOM: "api:room",
     API_PUSHSERVER_PUBKEY: "api:pushServer:pubKey",
     API_USER_UPDATE: "api:updateUser",
+    API_NOTIFYGROUP: "api:notifyGroup",
 
     CHAT_INIT: "chat:init",
     CHAT_ROOM_UPDATE: "chat:room:update",
@@ -168,6 +180,15 @@ var events = function (state) {
 module.exports = events;
 },{}],8:[function(require,module,exports){
 module.exports = {
+    embed: {
+        default: {
+            title: "Page not found",
+            description: "maybe you forgot to include the goup ID"
+        },
+        home: {
+            call: "Call"
+        }
+    },
     setup: {
         title: "Setup",
         description: "Please allow notifications from this app.",
@@ -188,9 +209,6 @@ module.exports = {
         name: "Name",
         email: "Email",
         signup: "Signup"
-    },
-    embed: {
-        call: "Call"
     }
 };
 },{}],9:[function(require,module,exports){

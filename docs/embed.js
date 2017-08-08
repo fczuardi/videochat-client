@@ -25,6 +25,28 @@ var apiReducers = function (state, emitter) {
             return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
         });
     });
+    emitter.on(state.events.API_NOTIFYGROUP, function (_ref) {
+        var groupId = _ref.groupId,
+            room = _ref.room;
+
+        var query = "\n        mutation($groupId:ID!, $payload:String){\n            notifyUserGroup(id:$groupId, payload:$payload)\n        }";
+        var roomEncoded = JSON.stringify(room);
+        var payload = JSON.stringify({
+            title: "Support call",
+            options: {
+                body: "From group " + groupId,
+                data: room
+            }
+        });
+        var variables = { groupId: groupId, payload: payload };
+        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
+            if (err) {
+                emitter.emit(state.events.ERROR_API, err);
+                return emitter.emit(state.events.CHAT_ROOM_UPDATE, "disconnected");
+            }
+            return console.log(body.data);
+        });
+    });
 };
 
 module.exports = apiReducers;
@@ -48,6 +70,17 @@ var chatReducer = function (state, emitter) {
         state.publishFirst = publishFirst;
         opentok(state, emitter);
     });
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (status) {
+        console.log("Room update", status, state.chat.publishFirst);
+        if (status !== "waiting" || state.chat.publishFirst) {
+            return null;
+        }
+        return emitter.emit(state.events.API_NOTIFYGROUP, {
+            groupId: state.params.groupId,
+            room: state.chat.room
+        });
+    });
 };
 
 module.exports = chatReducer;
@@ -65,6 +98,7 @@ var uiReducer = require("./ui.embed");
 var apiReducer = require("./api.embed");
 var errorReducer = require("./error");
 var chatReducer = require("./chat");
+var defaultView = require("./views/embed.default");
 var embedView = require("./views/embed");
 
 app.use(eventNames);
@@ -72,13 +106,14 @@ app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);
-app.route("*", embedView);
+app.route("*", defaultView);
+app.route("*#group/:groupId", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":11,"./views/embed":12,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
+},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":11,"./views/embed":13,"./views/embed.default":12,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
 //      
 
 
@@ -121,6 +156,7 @@ var eventNames = {
     API_ROOM: "api:room",
     API_PUSHSERVER_PUBKEY: "api:pushServer:pubKey",
     API_USER_UPDATE: "api:updateUser",
+    API_NOTIFYGROUP: "api:notifyGroup",
 
     CHAT_INIT: "chat:init",
     CHAT_ROOM_UPDATE: "chat:room:update",
@@ -138,6 +174,15 @@ var events = function (state) {
 module.exports = events;
 },{}],8:[function(require,module,exports){
 module.exports = {
+    embed: {
+        default: {
+            title: "Page not found",
+            description: "maybe you forgot to include the goup ID"
+        },
+        home: {
+            call: "Call"
+        }
+    },
     setup: {
         title: "Setup",
         description: "Please allow notifications from this app.",
@@ -158,9 +203,6 @@ module.exports = {
         name: "Name",
         email: "Email",
         signup: "Signup"
-    },
-    embed: {
-        call: "Call"
     }
 };
 },{}],9:[function(require,module,exports){
@@ -265,22 +307,37 @@ var uiReducer = function (state, emitter) {
 
 module.exports = uiReducer;
 },{}],12:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"], ["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 //      
 
 var html = require("choo/html");
-var messages = require("../messages");
+var messages = require("../messages").embed.default;
+
+var defaultView = function (state, emit) {
+    return html(_templateObject, messages.title, messages.description);
+};
+
+module.exports = defaultView;
+},{"../messages":8,"choo/html":undefined}],13:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"]);
+
+function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+//      
+
+var html = require("choo/html");
+var messages = require("../messages").embed.home;
 
 var homeView = function (state, emit) {
     var requestRoom = function (event) {
         emit(state.events.API_ROOM);
     };
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    return html(_templateObject2, errorMsg, state.ui.roomStatus, requestRoom, messages.embed.call, JSON.stringify(state.chat.room));
+    return html(_templateObject2, errorMsg, state.params.groupId, state.ui.roomStatus, requestRoom, messages.call, JSON.stringify(state.chat.room));
 };
 
 module.exports = homeView;
