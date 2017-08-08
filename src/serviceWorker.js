@@ -3,24 +3,12 @@ import type { ChooMiddleware } from "./app";
 
 const toUint8Array = require("./urlBase64ToUint8Array");
 
-const WORKER_REGISTER = "worker:register";
-const WORKER_REGISTERED = "worker:registered";
-const WORKER_SERVERKEY = "worker:pushServer:key";
-const WORKER_SUBSCRIPTION_INFO = "worker:subscription:info";
-const WORKER_SUBSCRIBED = "worker:subscribed";
-
 const workerFilePath = "./sw.js";
 
 const worker: ChooMiddleware = (state, emitter) => {
     state.worker = {
         registration: null
     };
-
-    state.events.WORKER_REGISTER = WORKER_REGISTER;
-    state.events.WORKER_REGISTERED = WORKER_REGISTERED;
-    state.events.WORKER_SERVERKEY = WORKER_SERVERKEY;
-    state.events.WORKER_SUBSCRIPTION_INFO = WORKER_SUBSCRIPTION_INFO;
-    state.events.WORKER_SUBSCRIBED = WORKER_SUBSCRIBED;
 
     emitter.on(state.events.WORKER_REGISTER, () => {
         if (!navigator.serviceWorker) {
@@ -77,7 +65,8 @@ const worker: ChooMiddleware = (state, emitter) => {
             String.fromCharCode.apply(null, new Uint8Array(authBuffer))
         );
         const webPushInfo = { endpoint, key, auth };
-        const variables = { id: state.user.id, update: { webPushInfo } };
+        const variables = { id: state.user.username, update: { webPushInfo } };
+        console.log({variables})
         emitter.emit(state.events.API_USER_UPDATE, variables);
     });
 };

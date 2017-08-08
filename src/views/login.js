@@ -7,8 +7,6 @@ const loginView: ChooView = (state, emit) => {
     const onSubmit = event => {
         event.preventDefault();
         const id = event.target.elements[0].value.trim();
-        console.log({ id });
-        console.log(state.events);
         emit(state.events.USER_LOGIN, id);
     };
     const errorMsg = state.errors.api

@@ -16,10 +16,12 @@ const extend = require("xtend");
 
 const userReducer: ChooMiddleware = (state, emitter) => {
     state.user = ({
+        username: null,
         id: null
     }: User);
 
-    emitter.on(state.events.USER_LOGIN, id => {
+    emitter.on(state.events.USER_LOGIN, username => {
+        state.user.username = username;
         emitter.emit(state.events.WORKER_REGISTER);
     });
 

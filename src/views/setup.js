@@ -3,12 +3,12 @@ import type { ChooView } from "../app";
 const html = require("choo/html");
 const messages = require("../messages");
 
-const permissionInfoView = () => html`
-<div>
-    <p>${messages.setup.permissionDenied}</p>
-    <a href="#setup">${messages.back}</a>
-</div>
-`;
+// const permissionInfoView = () => html`
+// <div>
+    // <p>${messages.setup.permissionDenied}</p>
+    // <a href="#setup">${messages.back}</a>
+// </div>
+// `;
 
 const setupView: ChooView = (state, emit) => {
     const notificationPrompt = () =>
