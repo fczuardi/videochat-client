@@ -66,7 +66,7 @@ const worker: ChooMiddleware = (state, emitter) => {
         );
         const webPushInfo = { endpoint, key, auth };
         const variables = { id: state.user.username, update: { webPushInfo } };
-        console.log({variables})
+        console.log({ variables });
         emitter.emit(state.events.API_USER_UPDATE, variables);
     });
 };

@@ -110,6 +110,12 @@ module.exports = errorReducer;
 //      
 
 var eventNames = {
+    WORKER_REGISTER: "worker:register",
+    WORKER_REGISTERED: "worker:registered",
+    WORKER_SERVERKEY: "worker:pushServer:key",
+    WORKER_SUBSCRIPTION_INFO: "worker:subscription:info",
+    WORKER_SUBSCRIBED: "worker:subscribed",
+
     ERROR_API: "error:api",
 
     API_ROOM: "api:room",

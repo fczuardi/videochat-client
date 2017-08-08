@@ -5,8 +5,8 @@ const messages = require("../messages");
 
 // const permissionInfoView = () => html`
 // <div>
-    // <p>${messages.setup.permissionDenied}</p>
-    // <a href="#setup">${messages.back}</a>
+// <p>${messages.setup.permissionDenied}</p>
+// <a href="#setup">${messages.back}</a>
 // </div>
 // `;
 

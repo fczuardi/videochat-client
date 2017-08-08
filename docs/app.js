@@ -41,7 +41,7 @@ module.exports = apiReducers;
 
 var app = require("choo")();
 var html = require("choo/html");
-var eventNames = require("./eventNames");
+var eventNames = require("./eventnames");
 var notificationsReducer = require("./notifications");
 var serviceWorkerReducer = require("./serviceWorker");
 var apiReducer = require("./api.app");
@@ -77,7 +77,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./error":6,"./eventnames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 
@@ -135,6 +135,12 @@ module.exports = errorReducer;
 //      
 
 var eventNames = {
+    WORKER_REGISTER: "worker:register",
+    WORKER_REGISTERED: "worker:registered",
+    WORKER_SERVERKEY: "worker:pushServer:key",
+    WORKER_SUBSCRIPTION_INFO: "worker:subscription:info",
+    WORKER_SUBSCRIBED: "worker:subscribed",
+
     ERROR_API: "error:api",
 
     API_ROOM: "api:room",
@@ -287,24 +293,12 @@ module.exports = initializeSession;
 
 var toUint8Array = require("./urlBase64ToUint8Array");
 
-var WORKER_REGISTER = "worker:register";
-var WORKER_REGISTERED = "worker:registered";
-var WORKER_SERVERKEY = "worker:pushServer:key";
-var WORKER_SUBSCRIPTION_INFO = "worker:subscription:info";
-var WORKER_SUBSCRIBED = "worker:subscribed";
-
 var workerFilePath = "./sw.js";
 
 var worker = function (state, emitter) {
     state.worker = {
         registration: null
     };
-
-    state.events.WORKER_REGISTER = WORKER_REGISTER;
-    state.events.WORKER_REGISTERED = WORKER_REGISTERED;
-    state.events.WORKER_SERVERKEY = WORKER_SERVERKEY;
-    state.events.WORKER_SUBSCRIPTION_INFO = WORKER_SUBSCRIPTION_INFO;
-    state.events.WORKER_SUBSCRIBED = WORKER_SUBSCRIBED;
 
     emitter.on(state.events.WORKER_REGISTER, function () {
         if (!navigator.serviceWorker) {
@@ -346,7 +340,8 @@ var worker = function (state, emitter) {
         var key = btoa(String.fromCharCode.apply(null, new Uint8Array(keyBuffer)));
         var auth = btoa(String.fromCharCode.apply(null, new Uint8Array(authBuffer)));
         var webPushInfo = { endpoint: endpoint, key: key, auth: auth };
-        var variables = { id: state.user.id, update: { webPushInfo: webPushInfo } };
+        var variables = { id: state.user.username, update: { webPushInfo: webPushInfo } };
+        console.log({ variables: variables });
         emitter.emit(state.events.API_USER_UPDATE, variables);
     });
 };
@@ -375,10 +370,12 @@ var extend = require("xtend");
 
 var userReducer = function (state, emitter) {
     state.user = {
+        username: null,
         id: null
     };
 
-    emitter.on(state.events.USER_LOGIN, function (id) {
+    emitter.on(state.events.USER_LOGIN, function (username) {
+        state.user.username = username;
         emitter.emit(state.events.WORKER_REGISTER);
     });
 
@@ -432,8 +429,6 @@ var loginView = function (state, emit) {
     var onSubmit = function (event) {
         event.preventDefault();
         var id = event.target.elements[0].value.trim();
-        console.log({ id: id });
-        console.log(state.events);
         emit(state.events.USER_LOGIN, id);
     };
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
@@ -442,8 +437,7 @@ var loginView = function (state, emit) {
 
 module.exports = loginView;
 },{"../messages":8,"choo/html":undefined}],17:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"], ["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -452,9 +446,12 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 var html = require("choo/html");
 var messages = require("../messages");
 
-var permissionInfoView = function () {
-    return html(_templateObject, messages.setup.permissionDenied, messages.back);
-};
+// const permissionInfoView = () => html`
+// <div>
+// <p>${messages.setup.permissionDenied}</p>
+// <a href="#setup">${messages.back}</a>
+// </div>
+// `;
 
 var setupView = function (state, emit) {
     var notificationPrompt = function () {
@@ -463,7 +460,7 @@ var setupView = function (state, emit) {
         });
     };
 
-    return html(_templateObject2, messages.setup.title, state.notifications.permission, state.notifications.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notifications.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
+    return html(_templateObject, messages.setup.title, state.notifications.permission, state.notifications.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notifications.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
 };
 
 module.exports = setupView;
