@@ -41,7 +41,7 @@ module.exports = apiReducers;
 
 var app = require("choo")();
 var html = require("choo/html");
-var eventNames = require("./eventnames");
+var eventNames = require("./eventNames");
 var notificationsReducer = require("./notifications");
 var serviceWorkerReducer = require("./serviceWorker");
 var apiReducer = require("./api.app");
@@ -77,7 +77,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./error":6,"./eventnames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 

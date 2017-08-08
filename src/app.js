@@ -4,7 +4,7 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 
 const app = require("choo")();
 const html = require("choo/html");
-const eventNames = require("./eventnames");
+const eventNames = require("./eventNames");
 const notificationsReducer = require("./notifications");
 const serviceWorkerReducer = require("./serviceWorker");
 const apiReducer = require("./api.app");
