@@ -9,7 +9,7 @@ const chatReducer: ChooMiddleware = (state, emitter) => {
         publishFirst: false
     };
 
-    emitter.on(state.events.CHAT_INIT, ({room, publishFirst}) => {
+    emitter.on(state.events.CHAT_INIT, ({ room, publishFirst }) => {
         state.chat.room = room;
         state.publishFirst = publishFirst;
         opentok(state, emitter);

@@ -16,11 +16,12 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
         return apiCall({ query }, (err, resp, body) => {
             if (err || !body.data.pushServer) {
                 if (err) {
-                    return emitter.emit(state.events.ERROR_API, err)
+                    return emitter.emit(state.events.ERROR_API, err);
                 }
-                return emitter.emit(state.events.ERROR_API, new Error(
-                    "API return dont have a pubkey value"
-                ));
+                return emitter.emit(
+                    state.events.ERROR_API,
+                    new Error("API return dont have a pubkey value")
+                );
             }
             return emitter.emit(
                 state.events.WORKER_SERVERKEY,
@@ -46,9 +47,12 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
         }`;
         return apiCall({ query, variables }, (err, resp, body) => {
             if (err) {
-                return emitter.emit(state.events.ERROR_API, err)
+                return emitter.emit(state.events.ERROR_API, err);
             }
-            return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
+            return emitter.emit(
+                state.events.USER_UPDATED,
+                body.data.updateUser
+            );
         });
     });
 };

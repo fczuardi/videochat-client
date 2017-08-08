@@ -9,7 +9,7 @@ const homeView: ChooView = (state, emit) => {
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}</p>`
-        : '';
+        : "";
     return html`
 <div>
     <div>

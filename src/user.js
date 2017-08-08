@@ -10,9 +10,9 @@ export type User = {
         key: string,
         auth: string
     }
-}
+};
 
-const extend = require('xtend');
+const extend = require("xtend");
 
 const userReducer: ChooMiddleware = (state, emitter) => {
     state.user = ({
@@ -23,7 +23,7 @@ const userReducer: ChooMiddleware = (state, emitter) => {
         emitter.emit(state.events.WORKER_REGISTER);
     });
 
-    emitter.on(state.events.ERROR_API, () => emitter.emit(state.events.RENDER))
+    emitter.on(state.events.ERROR_API, () => emitter.emit(state.events.RENDER));
 
     emitter.on(state.events.USER_UPDATED, user => {
         state.user = extend(state.user, user);

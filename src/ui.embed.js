@@ -7,8 +7,7 @@ const uiReducer: ChooMiddleware = (state, emitter) => {
     state.ui = {
         roomSatus: "disconnected"
     };
-    
-    console.log(1)
+
     emitter.on(state.events.CHAT_ROOM_UPDATE, newStatus => {
         state.ui.roomStatus = newStatus;
         if (newStatus !== "connected") {

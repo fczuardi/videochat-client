@@ -13,7 +13,7 @@ const loginView: ChooView = (state, emit) => {
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}`
-        : '';
+        : "";
     return html`
 <div>
     ${errorMsg}

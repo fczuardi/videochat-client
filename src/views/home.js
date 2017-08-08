@@ -2,18 +2,18 @@
 import type { ChooView } from "../app";
 
 const html = require("choo/html");
-const messages = require("../messages")
+const messages = require("../messages");
 
 const homeView: ChooView = (state, emit) => {
     const onSubmit = event => {
         event.preventDefault();
         const room = JSON.parse(event.target.elements[0].value);
         const publishFirst = true;
-        emit(state.events.CHAT_INIT, {room, publishFirst});
+        emit(state.events.CHAT_INIT, { room, publishFirst });
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}</p>`
-        : '';
+        : "";
     return html`
 <div>
     <div>

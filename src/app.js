@@ -25,7 +25,6 @@ const mainView: ChooView = (state, emit) => {
     return homeView(state, emit);
 };
 
-
 app.use(eventNames);
 app.use(apiReducer);
 app.use(errorReducer);

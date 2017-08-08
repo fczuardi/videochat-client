@@ -15,7 +15,7 @@ var onPush = function(event) {
     const title = "foo";
     const options = {
         body: "bar"
-    }
+    };
     const notification = new Notification(title, options);
     notification.addEventListener("click", function(event) {
         console.log("notification click event");

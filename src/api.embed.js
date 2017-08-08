@@ -21,11 +21,14 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
                 if (err) {
                     emitter.emit(state.events.ERROR_API, err);
                 }
-                return emitter.emit(state.events.CHAT_ROOM_UPDATE, "disconnected");
+                return emitter.emit(
+                    state.events.CHAT_ROOM_UPDATE,
+                    "disconnected"
+                );
             }
             const room = body.data.room;
             const publishFirst = false;
-            return emitter.emit(state.events.CHAT_INIT, {room, publishFirst});
+            return emitter.emit(state.events.CHAT_INIT, { room, publishFirst });
         });
     });
 };
