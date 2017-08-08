@@ -7,22 +7,17 @@ module.exports = { "app": { "html": { "title": "App page title", "themeColor": "
 var _require = require("./network"),
     apiCall = _require.apiCall;
 
-var API_PUSHSERVER_PUBKEY = "api:pushServer:pubKey";
-var API_USER_UPDATE = "api:updateUser";
-
 var apiReducers = function (state, emitter) {
     state.api = {};
-    state.events.API_PUSHSERVER_PUBKEY = API_PUSHSERVER_PUBKEY;
-    state.events.API_USER_UPDATE = API_USER_UPDATE;
 
     emitter.on(state.events.API_PUSHSERVER_PUBKEY, function () {
         var query = "\n        {\n            pushServer {\n                pubKey\n            }\n        }";
         return apiCall({ query: query }, function (err, resp, body) {
             if (err || !body.data.pushServer) {
                 if (err) {
-                    console.error(err);
+                    return emitter.emit(state.events.ERROR_API, err);
                 }
-                return console.error("API return dont have a pubkey value");
+                return emitter.emit(state.events.ERROR_API, new Error("API return dont have a pubkey value"));
             }
             return emitter.emit(state.events.WORKER_SERVERKEY, body.data.pushServer.pubKey);
         });
@@ -32,7 +27,7 @@ var apiReducers = function (state, emitter) {
         var query = "\n        mutation($id:ID!, $update: UserInput) {\n            updateUser(id:$id, update:$update){\n                id\n                name\n                email\n                groups\n                webPushInfo {\n                    endpoint\n                    key\n                    auth\n                }\n            }\n        }";
         return apiCall({ query: query, variables: variables }, function (err, resp, body) {
             if (err) {
-                return console.error(err);
+                return emitter.emit(state.events.ERROR_API, err);
             }
             return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
         });
@@ -40,15 +35,17 @@ var apiReducers = function (state, emitter) {
 };
 
 module.exports = apiReducers;
-},{"./network":7}],3:[function(require,module,exports){
+},{"./network":9}],3:[function(require,module,exports){
 //      
 
 
 var app = require("choo")();
 var html = require("choo/html");
+var eventNames = require("./eventNames");
 var notificationsReducer = require("./notifications");
 var serviceWorkerReducer = require("./serviceWorker");
 var apiReducer = require("./api.app");
+var errorReducer = require("./error");
 var userReducer = require("./user");
 var chatReducer = require("./chat");
 var setupView = require("./views/setup");
@@ -65,9 +62,11 @@ var mainView = function (state, emit) {
     return homeView(state, emit);
 };
 
+app.use(eventNames);
+app.use(apiReducer);
+app.use(errorReducer);
 app.use(notificationsReducer);
 app.use(serviceWorkerReducer);
-app.use(apiReducer);
 app.use(userReducer);
 app.use(chatReducer);
 app.route("*", mainView);
@@ -78,7 +77,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./notifications":8,"./serviceWorker":10,"./user":12,"./views/home":13,"./views/login":14,"./views/setup":15,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 
@@ -86,19 +85,77 @@ var opentok = require("./opentok");
 
 var chatReducer = function (state, emitter) {
     state.chat = {
-        room: null
+        room: null,
+        publishFirst: false
     };
-    emitter.on("opentok:initialize", function (room) {
+
+    emitter.on(state.events.CHAT_INIT, function (_ref) {
+        var room = _ref.room,
+            publishFirst = _ref.publishFirst;
+
         state.chat.room = room;
-        opentok(room, emitter, state.publishFirst);
+        state.publishFirst = publishFirst;
+        opentok(state, emitter);
     });
 };
 
 module.exports = chatReducer;
-},{"./opentok":9}],5:[function(require,module,exports){
+},{"./opentok":11}],5:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
 },{"../config.toml":1}],6:[function(require,module,exports){
+//      
+
+
+var ERROR_API = "error:api";
+
+var errorReducer = function (state, emitter) {
+    state.errors = {
+        api: null
+    };
+
+    state.events.ERROR_API = ERROR_API;
+
+    var clearApiError = function () {
+        state.errors.api = null;
+    };
+
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+    emitter.on(state.events.API_ROOM, clearApiError);
+    emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+    emitter.on(ERROR_API, function (err) {
+        console.error(err);
+        state.errors.api = err;
+    });
+};
+
+module.exports = errorReducer;
+},{}],7:[function(require,module,exports){
+//      
+
+var eventNames = {
+    ERROR_API: "error:api",
+
+    API_ROOM: "api:room",
+    API_PUSHSERVER_PUBKEY: "api:pushServer:pubKey",
+    API_USER_UPDATE: "api:updateUser",
+
+    CHAT_INIT: "chat:init",
+    CHAT_ROOM_UPDATE: "chat:room:update",
+
+    USER_LOGIN: "user:login",
+    USER_UPDATED: "user:updated"
+};
+
+var events = function (state) {
+    Object.keys(eventNames).forEach(function (key) {
+        state.events[key] = eventNames[key];
+    });
+};
+
+module.exports = events;
+},{}],8:[function(require,module,exports){
 module.exports = {
     setup: {
         title: "Setup",
@@ -125,7 +182,7 @@ module.exports = {
         call: "Call"
     }
 };
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 //      
 
 
@@ -147,7 +204,7 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":5,"xhr":undefined}],8:[function(require,module,exports){
+},{"./config":5,"xhr":undefined}],10:[function(require,module,exports){
 //      
 
 
@@ -164,17 +221,17 @@ var notifications = function (state, emitter) {
 };
 
 module.exports = notifications;
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 
-var initializeSession = function (_ref, emitter) {
-    var apiKey = _ref.apiKey,
-        sessionId = _ref.sessionId,
-        token = _ref.token;
-    var publishFirst = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+var initializeSession = function (state, emitter) {
+    var _state$chat$room = state.chat.room,
+        apiKey = _state$chat$room.apiKey,
+        sessionId = _state$chat$room.sessionId,
+        token = _state$chat$room.token;
 
-    emitter.emit("render");
+    emitter.emit(state.events.RENDER);
     if (!apiKey || !sessionId || !token) {
         return;
     }
@@ -184,12 +241,12 @@ var initializeSession = function (_ref, emitter) {
                 alert(error.message);
             }
             if (status) {
-                emitter.emit("room:update", status);
+                emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
             }
         };
     };
     var session = OT.initSession(apiKey, sessionId);
-    //
+
     var initPublisher = function () {
         return OT.initPublisher("publisher", {
             insertMode: "append",
@@ -203,14 +260,14 @@ var initializeSession = function (_ref, emitter) {
         if (error) {
             handleResponse()(error);
         } else {
-            if (publishFirst) {
+            if (state.chat.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             // Subscribe to a newly created stream
             session.on("streamCreated", function (event) {
                 // Create a publisher
-                if (!publishFirst) {
+                if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 session.subscribe(event.stream, "subscriber", {
@@ -224,7 +281,7 @@ var initializeSession = function (_ref, emitter) {
 };
 
 module.exports = initializeSession;
-},{"@opentok/client":undefined}],10:[function(require,module,exports){
+},{"@opentok/client":undefined}],12:[function(require,module,exports){
 //      
 
 
@@ -295,7 +352,7 @@ var worker = function (state, emitter) {
 };
 
 module.exports = worker;
-},{"./urlBase64ToUint8Array":11}],11:[function(require,module,exports){
+},{"./urlBase64ToUint8Array":13}],13:[function(require,module,exports){
 // from https://github.com/web-push-libs/web-push
 function urlBase64ToUint8Array(base64String) {
     var padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -310,38 +367,35 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 module.exports = urlBase64ToUint8Array;
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 //      
 
 
-var extend = require('xtend');
-
-var USER_LOGIN = "user:login";
-var USER_UPDATED = "user:updated";
+var extend = require("xtend");
 
 var userReducer = function (state, emitter) {
     state.user = {
         id: null
     };
 
-    state.events.USER_LOGIN = USER_LOGIN;
-    state.events.USER_UPDATED = USER_UPDATED;
-
     emitter.on(state.events.USER_LOGIN, function (id) {
-        state.user.id = id;
         emitter.emit(state.events.WORKER_REGISTER);
     });
 
+    emitter.on(state.events.ERROR_API, function () {
+        return emitter.emit(state.events.RENDER);
+    });
+
     emitter.on(state.events.USER_UPDATED, function (user) {
-        console.log({ user: user });
         state.user = extend(state.user, user);
         emitter.emit(state.events.RENDER);
     });
 };
 
 module.exports = userReducer;
-},{"xtend":undefined}],13:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <div>\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
+},{"xtend":undefined}],15:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -355,15 +409,17 @@ var homeView = function (state, emit) {
     var onSubmit = function (event) {
         event.preventDefault();
         var room = JSON.parse(event.target.elements[0].value);
-        state.publishFirst = true;
-        emit("opentok:initialize", room);
+        var publishFirst = true;
+        emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
     };
-    return html(_templateObject, messages.home.user, state.user.name, state.user.email, onSubmit);
+    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    return html(_templateObject2, errorMsg, messages.home.user, state.user.name, state.user.email, onSubmit);
 };
 
 module.exports = homeView;
-},{"../messages":6,"choo/html":undefined}],14:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
+},{"../messages":8,"choo/html":undefined}],16:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -380,11 +436,12 @@ var loginView = function (state, emit) {
         console.log(state.events);
         emit(state.events.USER_LOGIN, id);
     };
-    return html(_templateObject, onSubmit, messages.login.userId, messages.login.userIdPlaceholder, messages.login.login);
+    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    return html(_templateObject2, errorMsg, onSubmit, messages.login.userId, messages.login.userIdPlaceholder, messages.login.login);
 };
 
 module.exports = loginView;
-},{"../messages":6,"choo/html":undefined}],15:[function(require,module,exports){
+},{"../messages":8,"choo/html":undefined}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"], ["\n<div>\n    <p>", "</p>\n    <a href=\"#setup\">", "</a>\n</div>\n"]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
@@ -410,4 +467,4 @@ var setupView = function (state, emit) {
 };
 
 module.exports = setupView;
-},{"../messages":6,"choo/html":undefined}]},{},[3]);
+},{"../messages":8,"choo/html":undefined}]},{},[3]);

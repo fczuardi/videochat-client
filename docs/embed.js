@@ -8,23 +8,27 @@ var _require = require("./network"),
     apiCall = _require.apiCall;
 
 var apiReducers = function (state, emitter) {
-    state.api = {}, emitter.on("api:room", function () {
+    state.api = {};
+
+    emitter.on(state.events.API_ROOM, function () {
         var query = "\n        {\n            room {\n                apiKey\n                sessionId\n                token\n            }\n        }";
-        emitter.emit("room:update", "requesting");
+        emitter.emit(state.events.CHAT_ROOM_UPDATE, "requesting");
         return apiCall({ query: query }, function (err, resp, body) {
             if (err || !body.data.room) {
                 if (err) {
-                    console.error(err);
+                    emitter.emit(state.events.ERROR_API, err);
                 }
-                return emitter.emit("room:update", "disconnected");
+                return emitter.emit(state.events.CHAT_ROOM_UPDATE, "disconnected");
             }
-            return emitter.emit("opentok:initialize", body.data.room);
+            var room = body.data.room;
+            var publishFirst = false;
+            return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
         });
     });
 };
 
 module.exports = apiReducers;
-},{"./network":7}],3:[function(require,module,exports){
+},{"./network":9}],3:[function(require,module,exports){
 //      
 
 
@@ -32,16 +36,22 @@ var opentok = require("./opentok");
 
 var chatReducer = function (state, emitter) {
     state.chat = {
-        room: null
+        room: null,
+        publishFirst: false
     };
-    emitter.on("opentok:initialize", function (room) {
+
+    emitter.on(state.events.CHAT_INIT, function (_ref) {
+        var room = _ref.room,
+            publishFirst = _ref.publishFirst;
+
         state.chat.room = room;
-        opentok(room, emitter, state.publishFirst);
+        state.publishFirst = publishFirst;
+        opentok(state, emitter);
     });
 };
 
 module.exports = chatReducer;
-},{"./opentok":8}],4:[function(require,module,exports){
+},{"./opentok":10}],4:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
 },{"../config.toml":1}],5:[function(require,module,exports){
@@ -50,21 +60,77 @@ module.exports = config;
 
 var app = require("choo")();
 var html = require("choo/html");
+var eventNames = require("./eventNames");
 var uiReducer = require("./ui.embed");
-var apiReducers = require("./api.embed");
-var chatReducers = require("./chat");
+var apiReducer = require("./api.embed");
+var errorReducer = require("./error");
+var chatReducer = require("./chat");
 var embedView = require("./views/embed");
 
+app.use(eventNames);
 app.use(uiReducer);
-app.use(apiReducers);
-app.use(chatReducers);
+app.use(apiReducer);
+app.use(errorReducer);
+app.use(chatReducer);
 app.route("*", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.embed":2,"./chat":3,"./ui.embed":9,"./views/embed":10,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
+},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":11,"./views/embed":12,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
+//      
+
+
+var ERROR_API = "error:api";
+
+var errorReducer = function (state, emitter) {
+    state.errors = {
+        api: null
+    };
+
+    state.events.ERROR_API = ERROR_API;
+
+    var clearApiError = function () {
+        state.errors.api = null;
+    };
+
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+    emitter.on(state.events.API_ROOM, clearApiError);
+    emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+    emitter.on(ERROR_API, function (err) {
+        console.error(err);
+        state.errors.api = err;
+    });
+};
+
+module.exports = errorReducer;
+},{}],7:[function(require,module,exports){
+//      
+
+var eventNames = {
+    ERROR_API: "error:api",
+
+    API_ROOM: "api:room",
+    API_PUSHSERVER_PUBKEY: "api:pushServer:pubKey",
+    API_USER_UPDATE: "api:updateUser",
+
+    CHAT_INIT: "chat:init",
+    CHAT_ROOM_UPDATE: "chat:room:update",
+
+    USER_LOGIN: "user:login",
+    USER_UPDATED: "user:updated"
+};
+
+var events = function (state) {
+    Object.keys(eventNames).forEach(function (key) {
+        state.events[key] = eventNames[key];
+    });
+};
+
+module.exports = events;
+},{}],8:[function(require,module,exports){
 module.exports = {
     setup: {
         title: "Setup",
@@ -91,7 +157,7 @@ module.exports = {
         call: "Call"
     }
 };
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 //      
 
 
@@ -113,17 +179,17 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":4,"xhr":undefined}],8:[function(require,module,exports){
+},{"./config":4,"xhr":undefined}],10:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 
-var initializeSession = function (_ref, emitter) {
-    var apiKey = _ref.apiKey,
-        sessionId = _ref.sessionId,
-        token = _ref.token;
-    var publishFirst = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+var initializeSession = function (state, emitter) {
+    var _state$chat$room = state.chat.room,
+        apiKey = _state$chat$room.apiKey,
+        sessionId = _state$chat$room.sessionId,
+        token = _state$chat$room.token;
 
-    emitter.emit("render");
+    emitter.emit(state.events.RENDER);
     if (!apiKey || !sessionId || !token) {
         return;
     }
@@ -133,12 +199,12 @@ var initializeSession = function (_ref, emitter) {
                 alert(error.message);
             }
             if (status) {
-                emitter.emit("room:update", status);
+                emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
             }
         };
     };
     var session = OT.initSession(apiKey, sessionId);
-    //
+
     var initPublisher = function () {
         return OT.initPublisher("publisher", {
             insertMode: "append",
@@ -152,14 +218,14 @@ var initializeSession = function (_ref, emitter) {
         if (error) {
             handleResponse()(error);
         } else {
-            if (publishFirst) {
+            if (state.chat.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             // Subscribe to a newly created stream
             session.on("streamCreated", function (event) {
                 // Create a publisher
-                if (!publishFirst) {
+                if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 session.subscribe(event.stream, "subscriber", {
@@ -173,14 +239,16 @@ var initializeSession = function (_ref, emitter) {
 };
 
 module.exports = initializeSession;
-},{"@opentok/client":undefined}],9:[function(require,module,exports){
+},{"@opentok/client":undefined}],11:[function(require,module,exports){
 //      
 
 
 var uiReducer = function (state, emitter) {
     state.ui = {
         roomSatus: "disconnected"
-    }, emitter.on("room:update", function (newStatus) {
+    };
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (newStatus) {
         state.ui.roomStatus = newStatus;
         if (newStatus !== "connected") {
             return emitter.emit(state.events.RENDER);
@@ -190,8 +258,9 @@ var uiReducer = function (state, emitter) {
 };
 
 module.exports = uiReducer;
-},{}],10:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <div>\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"], ["\n<div>\n    <div>\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"]);
+},{}],12:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p> ", " </p>\n        <button onclick=", ">", "</button>\n        <textarea>", "</textarea>\n    </div>\n    <div id=\"videos\">\n        <div id=\"publisher\"></div>\n        <div id=\"subscriber\"></div>\n    </div>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -202,10 +271,11 @@ var messages = require("../messages");
 
 var homeView = function (state, emit) {
     var requestRoom = function (event) {
-        emit("api:room");
+        emit(state.events.API_ROOM);
     };
-    return html(_templateObject, state.ui.roomStatus, requestRoom, messages.embed.call, JSON.stringify(state.chat.room));
+    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    return html(_templateObject2, errorMsg, state.ui.roomStatus, requestRoom, messages.embed.call, JSON.stringify(state.chat.room));
 };
 
 module.exports = homeView;
-},{"../messages":6,"choo/html":undefined}]},{},[5]);
+},{"../messages":8,"choo/html":undefined}]},{},[5]);

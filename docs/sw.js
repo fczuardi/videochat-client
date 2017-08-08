@@ -7,9 +7,26 @@ var logSwEvent = function(event) {
     }
 };
 
+var onPush = function(event) {
+    console.log("push event");
+    console.log(push);
+    const pushData = push.data;
+    console.log({ pushData });
+    const title = "foo";
+    const options = {
+        body: "bar"
+    };
+    const notification = new Notification(title, options);
+    notification.addEventListener("click", function(event) {
+        console.log("notification click event");
+        console.log(event);
+    });
+};
+
+self.addEventListener("push", onPush);
+
 self.addEventListener("install", logSwEvent);
 self.addEventListener("fetch", logSwEvent);
 self.addEventListener("activate", logSwEvent);
-self.addEventListener("push", logSwEvent);
 self.addEventListener("notificationclose", logSwEvent);
 self.addEventListener("notificationclick", logSwEvent);
