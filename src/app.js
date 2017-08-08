@@ -4,9 +4,11 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 
 const app = require("choo")();
 const html = require("choo/html");
+const eventNames = require("./eventNames");
 const notificationsReducer = require("./notifications");
 const serviceWorkerReducer = require("./serviceWorker");
 const apiReducer = require("./api.app");
+const errorReducer = require("./error");
 const userReducer = require("./user");
 const chatReducer = require("./chat");
 const setupView = require("./views/setup");
@@ -23,9 +25,12 @@ const mainView: ChooView = (state, emit) => {
     return homeView(state, emit);
 };
 
+
+app.use(eventNames);
+app.use(apiReducer);
+app.use(errorReducer);
 app.use(notificationsReducer);
 app.use(serviceWorkerReducer);
-app.use(apiReducer);
 app.use(userReducer);
 app.use(chatReducer);
 app.route("*", mainView);

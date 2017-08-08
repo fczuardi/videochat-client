@@ -5,11 +5,14 @@ const opentok = require("./opentok");
 
 const chatReducer: ChooMiddleware = (state, emitter) => {
     state.chat = {
-        room: null
+        room: null,
+        publishFirst: false
     };
-    emitter.on("opentok:initialize", room => {
+
+    emitter.on(state.events.CHAT_INIT, ({room, publishFirst}) => {
         state.chat.room = room;
-        opentok(room, emitter, state.publishFirst);
+        state.publishFirst = publishFirst;
+        opentok(state, emitter);
     });
 };
 

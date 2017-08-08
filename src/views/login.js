@@ -11,8 +11,12 @@ const loginView: ChooView = (state, emit) => {
         console.log(state.events);
         emit(state.events.USER_LOGIN, id);
     };
+    const errorMsg = state.errors.api
+        ? html`<p>${state.errors.api.message}`
+        : '';
     return html`
 <div>
+    ${errorMsg}
     <form onsubmit=${onSubmit}>
         <label>
             ${messages.login.userId}

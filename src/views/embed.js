@@ -5,11 +5,15 @@ const messages = require("../messages");
 
 const homeView: ChooView = (state, emit) => {
     const requestRoom = event => {
-        emit("api:room");
+        emit(state.events.API_ROOM);
     };
+    const errorMsg = state.errors.api
+        ? html`<p>${state.errors.api.message}</p>`
+        : '';
     return html`
 <div>
     <div>
+        ${errorMsg}
         <p> ${state.ui.roomStatus} </p>
         <button onclick=${requestRoom}>${messages.embed.call}</button>
         <textarea>${JSON.stringify(state.chat.room)}</textarea>

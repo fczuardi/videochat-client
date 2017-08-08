@@ -1,18 +1,10 @@
 // @flow
 const OT = require("@opentok/client");
 
-type Room = { apiKey: string, sessionId: string, token: string };
-type InitializeSession = (
-    room: Room,
-    emitter: Object,
-    publishFirst: boolean
-) => void;
-const initializeSession: InitializeSession = (
-    { apiKey, sessionId, token },
-    emitter,
-    publishFirst = false
-) => {
-    emitter.emit("render");
+type InitializeSession = (state: Object, emitter: Object) => void;
+const initializeSession: InitializeSession = (state, emitter) => {
+    const { apiKey, sessionId, token } = state.chat.room;
+    emitter.emit(state.events.RENDER);
     if (!apiKey || !sessionId || !token) {
         return;
     }
@@ -21,11 +13,11 @@ const initializeSession: InitializeSession = (
             alert(error.message);
         }
         if (status) {
-            emitter.emit("room:update", status);
+            emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
         }
     };
     const session = OT.initSession(apiKey, sessionId);
-    //
+
     const initPublisher = () => {
         return OT.initPublisher(
             "publisher",
@@ -43,14 +35,14 @@ const initializeSession: InitializeSession = (
         if (error) {
             handleResponse()(error);
         } else {
-            if (publishFirst) {
+            if (state.chat.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             // Subscribe to a newly created stream
             session.on("streamCreated", event => {
                 // Create a publisher
-                if (!publishFirst) {
+                if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 session.subscribe(
