@@ -11,7 +11,7 @@ var onNotificationClick = function(event) {
     var room = event.notification.data;
     console.log({ room });
     var encodedRoom = JSON.stringify(room);
-    clients.openWindow("./#login/" + encodedRoom);
+    clients.openWindow("./app.html#login/" + encodedRoom);
 };
 self.addEventListener("notificationclick", onNotificationClick);
 
