@@ -2,7 +2,14 @@ require("toml-require").install();
 const config = require("./config.toml");
 const { concurrent } = require("nps-utils");
 
-const vendors = ["choo", "choo/html", "choo-log", "xhr", "@opentok/client"];
+const vendors = [
+    "choo",
+    "choo/html",
+    "choo-log",
+    "xhr",
+    "@opentok/client",
+    "xtend"
+];
 
 const transforms = ["unflowify", "tomlify", "es2040"].map(
     t => "transform " + t

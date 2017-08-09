@@ -1645,7 +1645,7 @@ function pad (str) {
   return str.length !== 2 ? 0 + str : str
 }
 
-},{"assert":1,"xtend":33}],14:[function(require,module,exports){
+},{"assert":1,"xtend":"xtend"}],14:[function(require,module,exports){
 var assert = require('assert')
 var morph = require('./lib/morph')
 
@@ -3345,28 +3345,7 @@ Trie.prototype.mount = function (route, trie) {
   }
 }
 
-},{"assert":1,"xtend":33,"xtend/mutable":34}],33:[function(require,module,exports){
-module.exports = extend
-
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-function extend() {
-    var target = {}
-
-    for (var i = 0; i < arguments.length; i++) {
-        var source = arguments[i]
-
-        for (var key in source) {
-            if (hasOwnProperty.call(source, key)) {
-                target[key] = source[key]
-            }
-        }
-    }
-
-    return target
-}
-
-},{}],34:[function(require,module,exports){
+},{"assert":1,"xtend":"xtend","xtend/mutable":33}],33:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -57441,7 +57420,7 @@ Choo.prototype.toString = function (location, state) {
   return html.toString()
 }
 
-},{"assert":1,"document-ready":4,"nanobus":10,"nanohref":11,"nanolocation":12,"nanomorph":14,"nanoquery":17,"nanoraf":18,"nanorouter":19,"nanotiming":20,"scroll-to-anchor":26,"xtend":33}],"xhr":[function(require,module,exports){
+},{"assert":1,"document-ready":4,"nanobus":10,"nanohref":11,"nanolocation":12,"nanomorph":14,"nanoquery":17,"nanoraf":18,"nanorouter":19,"nanotiming":20,"scroll-to-anchor":26,"xtend":"xtend"}],"xhr":[function(require,module,exports){
 "use strict";
 var window = require("global/window")
 var isFunction = require("is-function")
@@ -57684,4 +57663,25 @@ function getXml(xhr) {
 
 function noop() {}
 
-},{"global/window":6,"is-function":9,"parse-headers":23,"xtend":33}]},{},[]);
+},{"global/window":6,"is-function":9,"parse-headers":23,"xtend":"xtend"}],"xtend":[function(require,module,exports){
+module.exports = extend
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}]},{},[]);
