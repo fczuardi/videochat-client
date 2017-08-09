@@ -60,6 +60,8 @@ app.use(userReducer);
 app.use(chatReducer);
 app.route("*", notFoundView);
 app.route("#login", mainView);
+app.route("/app.html#login", mainView);
+app.route("/videochat-client/app.html", mainView);
 app.route("/videochat-client/app.html#login", mainView);
 app.route("#home", mainView);
 app.route("#login/:room", mainView);
