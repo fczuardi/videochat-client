@@ -20,12 +20,12 @@ const initializeSession: InitializeSession = (state, emitter) => {
     const session = OT.initSession(apiKey, sessionId);
 
     const initPublisher = () => {
-        const name = state.user && state.user.name || '';
+        const name = (state.user && state.user.name) || "";
         const pubOptions = extend(config.opentok.publisherProperties, {
             insertMode: "append",
             name
         });
-        return OT.initPublisher( "publisher", pubOptions, handleResponse());
+        return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
 
     session.connect(token, error => {
@@ -40,8 +40,15 @@ const initializeSession: InitializeSession = (state, emitter) => {
                 if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
-                const subOptions = extend(config.opentok.subscriberProperties, {insertMode: "append"})
-                session.subscribe( event.stream, "subscriber", subOptions, handleResponse("connected"));
+                const subOptions = extend(config.opentok.subscriberProperties, {
+                    insertMode: "append"
+                });
+                session.subscribe(
+                    event.stream,
+                    "subscriber",
+                    subOptions,
+                    handleResponse("connected")
+                );
             });
         }
     });

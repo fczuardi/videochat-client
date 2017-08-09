@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "http://localhost:4000/graphql/" } };
+module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "http://localhost:4000/graphql/" }, "opentok": { "publisherProperties": { "width": 100, "height": 100 }, "subscriberProperties": { "width": "100%", "height": "100%" } } };
 },{}],2:[function(require,module,exports){
 //      
 
@@ -54,6 +54,7 @@ var html = require("choo/html");
 var eventNames = require("./eventNames");
 var notificationsReducer = require("./notifications");
 var serviceWorkerReducer = require("./serviceWorker");
+var uiReducer = require("./ui.embed");
 var apiReducer = require("./api.app");
 var errorReducer = require("./error");
 var userReducer = require("./user");
@@ -83,6 +84,7 @@ var mainView = function (state, emit) {
 };
 
 app.use(eventNames);
+app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(notificationsReducer);
@@ -99,7 +101,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./user":14,"./views/home":15,"./views/login":16,"./views/setup":17,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./ui.embed":14,"./user":16,"./views/home":17,"./views/login":18,"./views/setup":19,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 
@@ -272,6 +274,8 @@ module.exports = notifications;
 },{}],11:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
+var extend = require("xtend");
+var config = require("./config");
 
 var initializeSession = function (state, emitter) {
     var _state$chat$room = state.chat.room,
@@ -279,7 +283,6 @@ var initializeSession = function (state, emitter) {
         sessionId = _state$chat$room.sessionId,
         token = _state$chat$room.token;
 
-    emitter.emit(state.events.RENDER);
     if (!apiKey || !sessionId || !token) {
         return;
     }
@@ -296,15 +299,15 @@ var initializeSession = function (state, emitter) {
     var session = OT.initSession(apiKey, sessionId);
 
     var initPublisher = function () {
-        return OT.initPublisher("publisher", {
+        var name = state.user && state.user.name || "";
+        var pubOptions = extend(config.opentok.publisherProperties, {
             insertMode: "append",
-            width: "100%",
-            height: "100%"
-        }, handleResponse());
+            name: name
+        });
+        return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
-    // Connect to the session
+
     session.connect(token, function (error) {
-        // If the connection is successful, publish to the session
         if (error) {
             handleResponse()(error);
         } else {
@@ -312,24 +315,21 @@ var initializeSession = function (state, emitter) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
-            // Subscribe to a newly created stream
             session.on("streamCreated", function (event) {
-                // Create a publisher
                 if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
-                session.subscribe(event.stream, "subscriber", {
-                    insertMode: "append",
-                    width: "100%",
-                    height: "100%"
-                }, handleResponse("connected"));
+                var subOptions = extend(config.opentok.subscriberProperties, {
+                    insertMode: "append"
+                });
+                session.subscribe(event.stream, "subscriber", subOptions, handleResponse("connected"));
             });
         }
     });
 };
 
 module.exports = initializeSession;
-},{"@opentok/client":undefined}],12:[function(require,module,exports){
+},{"./config":5,"@opentok/client":undefined,"xtend":undefined}],12:[function(require,module,exports){
 //      
 
 
@@ -389,7 +389,30 @@ var worker = function (state, emitter) {
 };
 
 module.exports = worker;
-},{"./urlBase64ToUint8Array":13}],13:[function(require,module,exports){
+},{"./urlBase64ToUint8Array":15}],13:[function(require,module,exports){
+//      
+module.exports = {
+    videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
+    publisherDiv: "\nposition: absolute;\nz-index: 2;\nbottom: 0;\nright: 0;\noverflow:hidden;\nborder-radius: 100px;\n    ",
+    subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
+};
+},{}],14:[function(require,module,exports){
+//      
+
+
+var uiReducer = function (state, emitter) {
+    state.ui = {
+        roomSatus: "disconnected"
+    };
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
+        state.ui.roomStatus = newStatus;
+        return emitter.emit(state.events.RENDER);
+    });
+};
+
+module.exports = uiReducer;
+},{}],15:[function(require,module,exports){
 // from https://github.com/web-push-libs/web-push
 function urlBase64ToUint8Array(base64String) {
     var padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -404,7 +427,7 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 module.exports = urlBase64ToUint8Array;
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 //      
 
 
@@ -412,7 +435,7 @@ var extend = require("xtend");
 
 var userReducer = function (state, emitter) {
     state.user = {
-        username: null,
+        username: null, // the input value on login form, before backend return of the id
         id: null
     };
 
@@ -432,9 +455,11 @@ var userReducer = function (state, emitter) {
 };
 
 module.exports = userReducer;
-},{"xtend":undefined}],15:[function(require,module,exports){
+},{"xtend":undefined}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\">", "</textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\">", "</textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
+    _templateObject2 = _taggedTemplateLiteral(["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"], ["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"]),
+    _templateObject3 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
+    _templateObject4 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    ", "\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    ", "\n    ", "\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -443,20 +468,34 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 
 var html = require("choo/html");
 var messages = require("../messages");
+var styles = require("../styles");
 
 var homeView = function (state, emit) {
+    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    var publishFirst = true;
     var onSubmit = function (event) {
         event.preventDefault();
         var room = JSON.parse(event.target.elements[0].value);
-        var publishFirst = true;
         emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
     };
-    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    return html(_templateObject2, errorMsg, messages.home.user, state.user.name, state.user.email, onSubmit, JSON.stringify(state.chat.room));
+    var onLoad = function (event) {
+        var room = state.chat.room;
+        if (!room) {
+            return null;
+        }
+        emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
+    };
+    var manualRoomForm = state.chat.room ? state.ui.roomStatus : html(_templateObject2, onSubmit, JSON.stringify(state.chat.room));
+    var videochat = html(_templateObject3, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
+    videochat.isSameNode = function (target) {
+        return target.id === "videos";
+    };
+    onLoad();
+    return html(_templateObject4, errorMsg, messages.home.user, state.user.name, state.user.email, videochat, manualRoomForm);
 };
 
 module.exports = homeView;
-},{"../messages":8,"choo/html":undefined}],16:[function(require,module,exports){
+},{"../messages":8,"../styles":13,"choo/html":undefined}],18:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
@@ -482,7 +521,7 @@ var loginView = function (state, emit) {
 };
 
 module.exports = loginView;
-},{"../messages":8,"choo/html":undefined}],17:[function(require,module,exports){
+},{"../messages":8,"choo/html":undefined}],19:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }

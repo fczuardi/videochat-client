@@ -2,7 +2,7 @@
 import type { ChooView } from "../app";
 const html = require("choo/html");
 const messages = require("../messages").embed.home;
-const styles = require('../styles');
+const styles = require("../styles");
 
 const homeView: ChooView = (state, emit) => {
     const requestRoom = event => {

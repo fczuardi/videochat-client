@@ -3,7 +3,7 @@ import type { ChooView } from "../app";
 
 const html = require("choo/html");
 const messages = require("../messages");
-const styles = require('../styles');
+const styles = require("../styles");
 
 const homeView: ChooView = (state, emit) => {
     const errorMsg = state.errors.api
