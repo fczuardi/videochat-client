@@ -1,32 +1,38 @@
 // @flow
 import type { ChooView } from "../../app";
 const html = require("choo/html");
-const messages = require("../../messages");
+const messages = require("../../messages").app.login;
 
 const loginView: ChooView = (state, emit) => {
-    if (state.params.room) {
-        const room = JSON.parse(state.params.room);
-        emit(state.events.CHAT_ROOM_UPDATE, room);
-    }
     const onSubmit = event => {
         event.preventDefault();
-        const id = event.target.elements[0].value.trim();
-        emit(state.events.USER_LOGIN, id);
+        const username = event.target.elements[0].value.trim();
+        const saveLocally = event.target.elements[1].checked;
+        emit(state.events.USER_LOGIN, {username, saveLocally});
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}`
         : "";
+    const saveLocally = state.user.saveLocally;
+    const labelStyle = "display:block;"
     return html`
 <div>
     ${errorMsg}
     <form onsubmit=${onSubmit}>
-        <label>
-            ${messages.login.userId}
+        <label style=${labelStyle}>
+            ${messages.userId}
             <input
                 name="userId"
-                placeholder=${messages.login.userIdPlaceholder}></input>
+                placeholder=${messages.userIdPlaceholder}></input>
         </label>
-        <input type="submit" value=${messages.login.login}/>
+        <label style=${labelStyle}>
+            ${messages.remember}
+            <input
+                type="checkbox"
+                name="saveLocally"
+                checked=${saveLocally}></input>
+        </label>
+        <input type="submit" value=${messages.login}/>
     </form>
 </div>`;
 };

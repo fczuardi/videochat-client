@@ -24,8 +24,18 @@ const mainView = (state, emit) => {
         return setupView(state, emit);
     }
     if (!state.user.id) {
-        if (state.params.userId) {
-            emit(state.events.USER_LOGIN, state.params.userId);
+        if (state.params.room) {
+            emit(state.events.CHAT_ROOM_UPDATE, JSON.parse(state.params.room));
+        }
+        const localUserId =
+            state.params.userId || window.localStorage.getItem("userId");
+        if (localUserId && !state.errors.api) {
+            const saveLocallyValue = window.localStorage.getItem("saveLocally");
+            const saveLocally = saveLocallyValue && saveLocallyValue === "yes";
+            emit(state.events.USER_LOGIN, {
+                username: localUserId,
+                saveLocally
+            });
             return html`<div>Loading...</div>`;
         }
         emit(state.events.PUSHSTATE, "#login");
