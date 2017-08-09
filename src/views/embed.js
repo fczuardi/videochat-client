@@ -21,7 +21,7 @@ const homeView: ChooView = (state, emit) => {
 <div>
     <div>
         ${errorMsg}
-        <p>${state.ui.roomStatus}</p>
+        <p>${state.chat.roomStatus}</p>
         <button onclick=${requestRoom}>${messages.call}</button>
     </div>
     ${videochat}

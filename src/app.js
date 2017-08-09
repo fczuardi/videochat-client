@@ -6,12 +6,11 @@ const app = require("choo")();
 const html = require("choo/html");
 const eventNames = require("./eventNames");
 const setupReducer = require("./reducers/setup");
-const serviceWorkerReducer = require("./serviceWorker");
-const uiReducer = require("./ui.embed");
+const serviceWorkerReducer = require("./reducers/serviceWorker");
 const apiReducer = require("./api.app");
 const errorReducer = require("./error");
 const userReducer = require("./user");
-const chatReducer = require("./chat");
+const chatReducer = require("./reducers/chat");
 const setupView = require("./views/app/setup");
 const loginView = require("./views/app/login");
 const homeView = require("./views/app/home");
@@ -37,7 +36,6 @@ const mainView = (state, emit) => {
 };
 
 app.use(eventNames);
-app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(setupReducer);

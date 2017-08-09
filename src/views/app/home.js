@@ -23,7 +23,7 @@ const homeView: ChooView = (state, emit) => {
         emit(state.events.CHAT_INIT, { room, publishFirst });
     };
     const manualRoomForm = state.chat.room
-        ? state.ui.roomStatus
+        ? state.chat.roomStatus
         : html`
         <form onsubmit=${onSubmit}>
             <textarea name="ot">${JSON.stringify(state.chat.room)}</textarea>

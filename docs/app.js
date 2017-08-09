@@ -40,7 +40,7 @@ var apiReducers = function (state, emitter) {
 };
 
 module.exports = apiReducers;
-},{"./network":9}],3:[function(require,module,exports){
+},{"./network":8}],3:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<div>404</div>"], ["<div>404</div>"]),
     _templateObject2 = _taggedTemplateLiteral(["<div>Loading...</div>"], ["<div>Loading...</div>"]);
 
@@ -53,12 +53,11 @@ var app = require("choo")();
 var html = require("choo/html");
 var eventNames = require("./eventNames");
 var setupReducer = require("./reducers/setup");
-var serviceWorkerReducer = require("./serviceWorker");
-var uiReducer = require("./ui.embed");
+var serviceWorkerReducer = require("./reducers/serviceWorker");
 var apiReducer = require("./api.app");
 var errorReducer = require("./error");
 var userReducer = require("./user");
-var chatReducer = require("./chat");
+var chatReducer = require("./reducers/chat");
 var setupView = require("./views/app/setup");
 var loginView = require("./views/app/login");
 var homeView = require("./views/app/home");
@@ -84,7 +83,6 @@ var mainView = function (state, emit) {
 };
 
 app.use(eventNames);
-app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(setupReducer);
@@ -101,47 +99,10 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./reducers/setup":11,"./serviceWorker":12,"./ui.embed":14,"./user":16,"./views/app/home":17,"./views/app/login":18,"./views/app/setup":19,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
-//      
-
-
-var opentok = require("./opentok");
-
-var chatReducer = function (state, emitter) {
-    state.chat = {
-        room: null,
-        publishFirst: false
-    };
-
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
-        state.chat.room = room;
-    });
-
-    emitter.on(state.events.CHAT_INIT, function (_ref) {
-        var room = _ref.room,
-            publishFirst = _ref.publishFirst;
-
-        state.chat.room = room;
-        state.chat.publishFirst = publishFirst;
-        opentok(state, emitter);
-    });
-
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
-        if (status !== "waiting" || state.chat.publishFirst) {
-            return null;
-        }
-        return emitter.emit(state.events.API_NOTIFYGROUP, {
-            groupId: state.params.groupId,
-            room: state.chat.room
-        });
-    });
-};
-
-module.exports = chatReducer;
-},{"./opentok":10}],5:[function(require,module,exports){
+},{"./api.app":2,"./error":5,"./eventNames":6,"./reducers/chat":10,"./reducers/serviceWorker":11,"./reducers/setup":12,"./user":15,"./views/app/home":16,"./views/app/login":17,"./views/app/setup":18,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
-},{"../config.toml":1}],6:[function(require,module,exports){
+},{"../config.toml":1}],5:[function(require,module,exports){
 //      
 
 
@@ -169,7 +130,7 @@ var errorReducer = function (state, emitter) {
 };
 
 module.exports = errorReducer;
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 //      
 
 var eventNames = {
@@ -203,7 +164,7 @@ var events = function (state) {
 };
 
 module.exports = events;
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = {
     embed: {
         default: {
@@ -236,7 +197,7 @@ module.exports = {
         signup: "Signup"
     }
 };
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 //      
 
 
@@ -258,7 +219,7 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":5,"xhr":undefined}],10:[function(require,module,exports){
+},{"./config":4,"xhr":undefined}],9:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 var extend = require("xtend");
@@ -316,26 +277,54 @@ var initializeSession = function (state, emitter) {
 };
 
 module.exports = initializeSession;
-},{"./config":5,"@opentok/client":undefined,"xtend":undefined}],11:[function(require,module,exports){
+},{"./config":4,"@opentok/client":undefined,"xtend":undefined}],10:[function(require,module,exports){
 //      
 
 
-var setup = function (state, emitter) {
-    state.setup = {
-        permission: window.Notification.permission
+var opentok = require("../opentok");
+
+var chatReducer = function (state, emitter) {
+    state.chat = {
+        room: null,
+        roomSatus: "disconnected",
+        publishFirst: false
     };
-    emitter.on(state.events.SETUP_PERMISSION_UPDATE, function (permission) {
-        state.setup.permission = permission;
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
+        state.chat.roomStatus = newStatus;
         return emitter.emit(state.events.RENDER);
+    });
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
+        state.chat.room = room;
+    });
+
+    emitter.on(state.events.CHAT_INIT, function (_ref) {
+        var room = _ref.room,
+            publishFirst = _ref.publishFirst;
+
+        state.chat.room = room;
+        state.chat.publishFirst = publishFirst;
+        opentok(state, emitter);
+    });
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
+        if (status !== "waiting" || state.chat.publishFirst) {
+            return null;
+        }
+        return emitter.emit(state.events.API_NOTIFYGROUP, {
+            groupId: state.params.groupId,
+            room: state.chat.room
+        });
     });
 };
 
-module.exports = setup;
-},{}],12:[function(require,module,exports){
+module.exports = chatReducer;
+},{"../opentok":9}],11:[function(require,module,exports){
 //      
 
 
-var toUint8Array = require("./urlBase64ToUint8Array");
+var toUint8Array = require("../urlBase64ToUint8Array");
 
 var workerFilePath = "./sw.js";
 
@@ -391,7 +380,22 @@ var worker = function (state, emitter) {
 };
 
 module.exports = worker;
-},{"./urlBase64ToUint8Array":15}],13:[function(require,module,exports){
+},{"../urlBase64ToUint8Array":14}],12:[function(require,module,exports){
+//      
+
+
+var setup = function (state, emitter) {
+    state.setup = {
+        permission: window.Notification.permission
+    };
+    emitter.on(state.events.SETUP_PERMISSION_UPDATE, function (permission) {
+        state.setup.permission = permission;
+        return emitter.emit(state.events.RENDER);
+    });
+};
+
+module.exports = setup;
+},{}],13:[function(require,module,exports){
 //      
 module.exports = {
     videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
@@ -399,22 +403,6 @@ module.exports = {
     subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
 };
 },{}],14:[function(require,module,exports){
-//      
-
-
-var uiReducer = function (state, emitter) {
-    state.ui = {
-        roomSatus: "disconnected"
-    };
-
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
-        state.ui.roomStatus = newStatus;
-        return emitter.emit(state.events.RENDER);
-    });
-};
-
-module.exports = uiReducer;
-},{}],15:[function(require,module,exports){
 // from https://github.com/web-push-libs/web-push
 function urlBase64ToUint8Array(base64String) {
     var padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -429,7 +417,7 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 module.exports = urlBase64ToUint8Array;
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 //      
 
 
@@ -457,7 +445,7 @@ var userReducer = function (state, emitter) {
 };
 
 module.exports = userReducer;
-},{"xtend":undefined}],17:[function(require,module,exports){
+},{"xtend":undefined}],16:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"], ["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"]),
     _templateObject3 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
@@ -487,7 +475,7 @@ var homeView = function (state, emit) {
         }
         emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
     };
-    var manualRoomForm = state.chat.room ? state.ui.roomStatus : html(_templateObject2, onSubmit, JSON.stringify(state.chat.room));
+    var manualRoomForm = state.chat.room ? state.chat.roomStatus : html(_templateObject2, onSubmit, JSON.stringify(state.chat.room));
     var videochat = html(_templateObject3, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
     videochat.isSameNode = function (target) {
         return target.id === "videos";
@@ -497,7 +485,7 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"../../messages":8,"../../styles":13,"choo/html":undefined}],18:[function(require,module,exports){
+},{"../../messages":7,"../../styles":13,"choo/html":undefined}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
@@ -523,7 +511,7 @@ var loginView = function (state, emit) {
 };
 
 module.exports = loginView;
-},{"../../messages":8,"choo/html":undefined}],19:[function(require,module,exports){
+},{"../../messages":7,"choo/html":undefined}],18:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -544,4 +532,4 @@ var setupView = function (state, emit) {
 };
 
 module.exports = setupView;
-},{"../../messages":8,"choo/html":undefined}]},{},[3]);
+},{"../../messages":7,"choo/html":undefined}]},{},[3]);

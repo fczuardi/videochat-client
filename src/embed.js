@@ -5,15 +5,13 @@ import type { ChooMiddleware } from "./app";
 const app = require("choo")();
 const html = require("choo/html");
 const eventNames = require("./eventNames");
-const uiReducer = require("./ui.embed");
 const apiReducer = require("./api.embed");
 const errorReducer = require("./error");
-const chatReducer = require("./chat");
+const chatReducer = require("./reducers/chat");
 const defaultView = require("./views/embed/default");
 const embedView = require("./views/embed");
 
 app.use(eventNames);
-app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);

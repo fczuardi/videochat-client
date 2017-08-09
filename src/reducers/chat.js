@@ -1,13 +1,21 @@
 // @flow
-import type { ChooMiddleware } from "./app";
+import type { ChooMiddleware } from "../app";
+type RoomStatus = "disconnected" | "requesting" | "waiting" | "connected";
 
-const opentok = require("./opentok");
+
+const opentok = require("../opentok");
 
 const chatReducer: ChooMiddleware = (state, emitter) => {
     state.chat = {
         room: null,
+        roomSatus: "disconnected",
         publishFirst: false
     };
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, newStatus => {
+        state.chat.roomStatus = newStatus;
+        return emitter.emit(state.events.RENDER);
+    });
 
     emitter.on(state.events.CHAT_ROOM_UPDATE, room => {
         state.chat.room = room;

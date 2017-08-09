@@ -50,62 +50,23 @@ var apiReducers = function (state, emitter) {
 };
 
 module.exports = apiReducers;
-},{"./network":9}],3:[function(require,module,exports){
-//      
-
-
-var opentok = require("./opentok");
-
-var chatReducer = function (state, emitter) {
-    state.chat = {
-        room: null,
-        publishFirst: false
-    };
-
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
-        state.chat.room = room;
-    });
-
-    emitter.on(state.events.CHAT_INIT, function (_ref) {
-        var room = _ref.room,
-            publishFirst = _ref.publishFirst;
-
-        state.chat.room = room;
-        state.chat.publishFirst = publishFirst;
-        opentok(state, emitter);
-    });
-
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
-        if (status !== "waiting" || state.chat.publishFirst) {
-            return null;
-        }
-        return emitter.emit(state.events.API_NOTIFYGROUP, {
-            groupId: state.params.groupId,
-            room: state.chat.room
-        });
-    });
-};
-
-module.exports = chatReducer;
-},{"./opentok":10}],4:[function(require,module,exports){
+},{"./network":8}],3:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
-},{"../config.toml":1}],5:[function(require,module,exports){
+},{"../config.toml":1}],4:[function(require,module,exports){
 //      
 
 
 var app = require("choo")();
 var html = require("choo/html");
 var eventNames = require("./eventNames");
-var uiReducer = require("./ui.embed");
 var apiReducer = require("./api.embed");
 var errorReducer = require("./error");
-var chatReducer = require("./chat");
+var chatReducer = require("./reducers/chat");
 var defaultView = require("./views/embed/default");
 var embedView = require("./views/embed");
 
 app.use(eventNames);
-app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);
@@ -116,7 +77,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":12,"./views/embed":13,"./views/embed/default":14,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
+},{"./api.embed":2,"./error":5,"./eventNames":6,"./reducers/chat":10,"./views/embed":12,"./views/embed/default":13,"choo":undefined,"choo/html":undefined}],5:[function(require,module,exports){
 //      
 
 
@@ -144,7 +105,7 @@ var errorReducer = function (state, emitter) {
 };
 
 module.exports = errorReducer;
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 //      
 
 var eventNames = {
@@ -178,7 +139,7 @@ var events = function (state) {
 };
 
 module.exports = events;
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = {
     embed: {
         default: {
@@ -211,7 +172,7 @@ module.exports = {
         signup: "Signup"
     }
 };
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 //      
 
 
@@ -233,7 +194,7 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":4,"xhr":undefined}],10:[function(require,module,exports){
+},{"./config":3,"xhr":undefined}],9:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 var extend = require("xtend");
@@ -291,7 +252,50 @@ var initializeSession = function (state, emitter) {
 };
 
 module.exports = initializeSession;
-},{"./config":4,"@opentok/client":undefined,"xtend":undefined}],11:[function(require,module,exports){
+},{"./config":3,"@opentok/client":undefined,"xtend":undefined}],10:[function(require,module,exports){
+//      
+
+
+var opentok = require("../opentok");
+
+var chatReducer = function (state, emitter) {
+    state.chat = {
+        room: null,
+        roomSatus: "disconnected",
+        publishFirst: false
+    };
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
+        state.chat.roomStatus = newStatus;
+        return emitter.emit(state.events.RENDER);
+    });
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
+        state.chat.room = room;
+    });
+
+    emitter.on(state.events.CHAT_INIT, function (_ref) {
+        var room = _ref.room,
+            publishFirst = _ref.publishFirst;
+
+        state.chat.room = room;
+        state.chat.publishFirst = publishFirst;
+        opentok(state, emitter);
+    });
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
+        if (status !== "waiting" || state.chat.publishFirst) {
+            return null;
+        }
+        return emitter.emit(state.events.API_NOTIFYGROUP, {
+            groupId: state.params.groupId,
+            room: state.chat.room
+        });
+    });
+};
+
+module.exports = chatReducer;
+},{"../opentok":9}],11:[function(require,module,exports){
 //      
 module.exports = {
     videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
@@ -299,22 +303,6 @@ module.exports = {
     subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
 };
 },{}],12:[function(require,module,exports){
-//      
-
-
-var uiReducer = function (state, emitter) {
-    state.ui = {
-        roomSatus: "disconnected"
-    };
-
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
-        state.ui.roomStatus = newStatus;
-        return emitter.emit(state.events.RENDER);
-    });
-};
-
-module.exports = uiReducer;
-},{}],13:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
     _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
@@ -336,11 +324,11 @@ var homeView = function (state, emit) {
     videochat.isSameNode = function (target) {
         return target.id === "videos";
     };
-    return html(_templateObject3, errorMsg, state.ui.roomStatus, requestRoom, messages.call, videochat);
+    return html(_templateObject3, errorMsg, state.chat.roomStatus, requestRoom, messages.call, videochat);
 };
 
 module.exports = homeView;
-},{"../messages":8,"../styles":11,"choo/html":undefined}],14:[function(require,module,exports){
+},{"../messages":7,"../styles":11,"choo/html":undefined}],13:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"], ["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -355,4 +343,4 @@ var defaultView = function (state, emit) {
 };
 
 module.exports = defaultView;
-},{"../../messages":8,"choo/html":undefined}]},{},[5]);
+},{"../../messages":7,"choo/html":undefined}]},{},[4]);
