@@ -17,6 +17,7 @@ app.use(errorReducer);
 app.use(chatReducer);
 app.route("*", defaultView);
 app.route("#group/:groupId", embedView);
+app.route("/videochat-client/embed.html", embedView);
 app.route("/videochat-client/embed.html#group/:groupId", embedView);
 
 if (typeof document === "undefined" || !document.body) {
