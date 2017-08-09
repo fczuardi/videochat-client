@@ -7,6 +7,7 @@ const html = require("choo/html");
 const eventNames = require("./eventNames");
 const notificationsReducer = require("./notifications");
 const serviceWorkerReducer = require("./serviceWorker");
+const uiReducer = require("./ui.embed");
 const apiReducer = require("./api.app");
 const errorReducer = require("./error");
 const userReducer = require("./user");
@@ -36,6 +37,7 @@ const mainView = (state, emit) => {
 };
 
 app.use(eventNames);
+app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
 app.use(notificationsReducer);

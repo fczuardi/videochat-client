@@ -10,19 +10,20 @@ const homeView: ChooView = (state, emit) => {
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}</p>`
         : "";
+    const videochat = html`
+        <div id="videos">
+            <div id="publisher"></div>
+            <div id="subscriber"></div>
+        </div>`;
+    videochat.isSameNode = target => (target.id === 'videos');
     return html`
 <div>
     <div>
         ${errorMsg}
-        ${state.params.groupId}
-        <p> ${state.ui.roomStatus} </p>
+        <p>${state.ui.roomStatus}</p>
         <button onclick=${requestRoom}>${messages.call}</button>
-        <textarea>${JSON.stringify(state.chat.room)}</textarea>
     </div>
-    <div id="videos">
-        <div id="publisher"></div>
-        <div id="subscriber"></div>
-    </div>
+    ${videochat}
 </div>`;
 };
 

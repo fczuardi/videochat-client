@@ -4,7 +4,6 @@ const OT = require("@opentok/client");
 type InitializeSession = (state: Object, emitter: Object) => void;
 const initializeSession: InitializeSession = (state, emitter) => {
     const { apiKey, sessionId, token } = state.chat.room;
-    emitter.emit(state.events.RENDER);
     if (!apiKey || !sessionId || !token) {
         return;
     }
