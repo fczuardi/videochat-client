@@ -1,7 +1,7 @@
 // @flow
-import type { ChooView } from "../app";
+import type { ChooView } from "../../app";
 const html = require("choo/html");
-const messages = require("../messages");
+const messages = require("../../messages");
 
 const loginView: ChooView = (state, emit) => {
     if (state.params.room) {

@@ -1,6 +1,8 @@
 // @flow
 import type { ChooMiddleware } from "./app";
 const eventNames = {
+    SETUP_PERMISSION_UPDATE: "setupp:notification:updated",
+
     WORKER_REGISTER: "worker:register",
     WORKER_REGISTERED: "worker:registered",
     WORKER_SERVERKEY: "worker:pushServer:key",

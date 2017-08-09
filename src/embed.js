@@ -9,7 +9,7 @@ const uiReducer = require("./ui.embed");
 const apiReducer = require("./api.embed");
 const errorReducer = require("./error");
 const chatReducer = require("./chat");
-const defaultView = require("./views/embed.default");
+const defaultView = require("./views/embed/default");
 const embedView = require("./views/embed");
 
 app.use(eventNames);

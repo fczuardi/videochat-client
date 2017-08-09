@@ -5,23 +5,23 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 const app = require("choo")();
 const html = require("choo/html");
 const eventNames = require("./eventNames");
-const notificationsReducer = require("./notifications");
+const setupReducer = require("./reducers/setup");
 const serviceWorkerReducer = require("./serviceWorker");
 const uiReducer = require("./ui.embed");
 const apiReducer = require("./api.app");
 const errorReducer = require("./error");
 const userReducer = require("./user");
 const chatReducer = require("./chat");
-const setupView = require("./views/setup");
-const loginView = require("./views/login");
-const homeView = require("./views/home");
+const setupView = require("./views/app/setup");
+const loginView = require("./views/app/login");
+const homeView = require("./views/app/home");
 
 const notFoundView: ChooView = (state, emit) => {
     return html`<div>404</div>`;
 };
 
 const mainView = (state, emit) => {
-    if (state.notifications.permission !== "granted") {
+    if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }
     if (!state.user.id) {
@@ -40,7 +40,7 @@ app.use(eventNames);
 app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
-app.use(notificationsReducer);
+app.use(setupReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
 app.use(chatReducer);

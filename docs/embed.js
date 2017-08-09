@@ -101,7 +101,7 @@ var uiReducer = require("./ui.embed");
 var apiReducer = require("./api.embed");
 var errorReducer = require("./error");
 var chatReducer = require("./chat");
-var defaultView = require("./views/embed.default");
+var defaultView = require("./views/embed/default");
 var embedView = require("./views/embed");
 
 app.use(eventNames);
@@ -116,7 +116,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":12,"./views/embed":14,"./views/embed.default":13,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
+},{"./api.embed":2,"./chat":3,"./error":6,"./eventNames":7,"./ui.embed":12,"./views/embed":13,"./views/embed/default":14,"choo":undefined,"choo/html":undefined}],6:[function(require,module,exports){
 //      
 
 
@@ -148,6 +148,8 @@ module.exports = errorReducer;
 //      
 
 var eventNames = {
+    SETUP_PERMISSION_UPDATE: "setupp:notification:updated",
+
     WORKER_REGISTER: "worker:register",
     WORKER_REGISTERED: "worker:registered",
     WORKER_SERVERKEY: "worker:pushServer:key",
@@ -313,21 +315,6 @@ var uiReducer = function (state, emitter) {
 
 module.exports = uiReducer;
 },{}],13:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"], ["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"]);
-
-function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-//      
-
-var html = require("choo/html");
-var messages = require("../messages").embed.default;
-
-var defaultView = function (state, emit) {
-    return html(_templateObject, messages.title, messages.description);
-};
-
-module.exports = defaultView;
-},{"../messages":8,"choo/html":undefined}],14:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
     _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
@@ -353,4 +340,19 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"../messages":8,"../styles":11,"choo/html":undefined}]},{},[5]);
+},{"../messages":8,"../styles":11,"choo/html":undefined}],14:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"], ["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"]);
+
+function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+//      
+
+var html = require("choo/html");
+var messages = require("../../messages").embed.default;
+
+var defaultView = function (state, emit) {
+    return html(_templateObject, messages.title, messages.description);
+};
+
+module.exports = defaultView;
+},{"../../messages":8,"choo/html":undefined}]},{},[5]);

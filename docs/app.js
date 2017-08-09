@@ -52,23 +52,23 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 var app = require("choo")();
 var html = require("choo/html");
 var eventNames = require("./eventNames");
-var notificationsReducer = require("./notifications");
+var setupReducer = require("./reducers/setup");
 var serviceWorkerReducer = require("./serviceWorker");
 var uiReducer = require("./ui.embed");
 var apiReducer = require("./api.app");
 var errorReducer = require("./error");
 var userReducer = require("./user");
 var chatReducer = require("./chat");
-var setupView = require("./views/setup");
-var loginView = require("./views/login");
-var homeView = require("./views/home");
+var setupView = require("./views/app/setup");
+var loginView = require("./views/app/login");
+var homeView = require("./views/app/home");
 
 var notFoundView = function (state, emit) {
     return html(_templateObject);
 };
 
 var mainView = function (state, emit) {
-    if (state.notifications.permission !== "granted") {
+    if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }
     if (!state.user.id) {
@@ -87,7 +87,7 @@ app.use(eventNames);
 app.use(uiReducer);
 app.use(apiReducer);
 app.use(errorReducer);
-app.use(notificationsReducer);
+app.use(setupReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
 app.use(chatReducer);
@@ -101,7 +101,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./notifications":10,"./serviceWorker":12,"./ui.embed":14,"./user":16,"./views/home":17,"./views/login":18,"./views/setup":19,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./api.app":2,"./chat":4,"./error":6,"./eventNames":7,"./reducers/setup":11,"./serviceWorker":12,"./ui.embed":14,"./user":16,"./views/app/home":17,"./views/app/login":18,"./views/app/setup":19,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 
@@ -138,7 +138,7 @@ var chatReducer = function (state, emitter) {
 };
 
 module.exports = chatReducer;
-},{"./opentok":11}],5:[function(require,module,exports){
+},{"./opentok":10}],5:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
 },{"../config.toml":1}],6:[function(require,module,exports){
@@ -173,6 +173,8 @@ module.exports = errorReducer;
 //      
 
 var eventNames = {
+    SETUP_PERMISSION_UPDATE: "setupp:notification:updated",
+
     WORKER_REGISTER: "worker:register",
     WORKER_REGISTERED: "worker:registered",
     WORKER_SERVERKEY: "worker:pushServer:key",
@@ -258,21 +260,6 @@ module.exports = {
 };
 },{"./config":5,"xhr":undefined}],10:[function(require,module,exports){
 //      
-
-
-var notifications = function (state, emitter) {
-    state.notifications = {
-        permission: window.Notification.permission
-    };
-    emitter.on("notification:update", function (permission) {
-        state.notifications.permission = permission;
-        return emitter.emit(state.events.RENDER);
-    });
-};
-
-module.exports = notifications;
-},{}],11:[function(require,module,exports){
-//      
 var OT = require("@opentok/client");
 var extend = require("xtend");
 var config = require("./config");
@@ -329,7 +316,22 @@ var initializeSession = function (state, emitter) {
 };
 
 module.exports = initializeSession;
-},{"./config":5,"@opentok/client":undefined,"xtend":undefined}],12:[function(require,module,exports){
+},{"./config":5,"@opentok/client":undefined,"xtend":undefined}],11:[function(require,module,exports){
+//      
+
+
+var setup = function (state, emitter) {
+    state.setup = {
+        permission: window.Notification.permission
+    };
+    emitter.on(state.events.SETUP_PERMISSION_UPDATE, function (permission) {
+        state.setup.permission = permission;
+        return emitter.emit(state.events.RENDER);
+    });
+};
+
+module.exports = setup;
+},{}],12:[function(require,module,exports){
 //      
 
 
@@ -467,8 +469,8 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 
 
 var html = require("choo/html");
-var messages = require("../messages");
-var styles = require("../styles");
+var messages = require("../../messages");
+var styles = require("../../styles");
 
 var homeView = function (state, emit) {
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
@@ -495,7 +497,7 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"../messages":8,"../styles":13,"choo/html":undefined}],18:[function(require,module,exports){
+},{"../../messages":8,"../../styles":13,"choo/html":undefined}],18:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
@@ -504,7 +506,7 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 //      
 
 var html = require("choo/html");
-var messages = require("../messages");
+var messages = require("../../messages");
 
 var loginView = function (state, emit) {
     if (state.params.room) {
@@ -521,7 +523,7 @@ var loginView = function (state, emit) {
 };
 
 module.exports = loginView;
-},{"../messages":8,"choo/html":undefined}],19:[function(require,module,exports){
+},{"../../messages":8,"choo/html":undefined}],19:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -529,24 +531,17 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 //      
 
 var html = require("choo/html");
-var messages = require("../messages");
-
-// const permissionInfoView = () => html`
-// <div>
-// <p>${messages.setup.permissionDenied}</p>
-// <a href="#setup">${messages.back}</a>
-// </div>
-// `;
+var messages = require("../../messages");
 
 var setupView = function (state, emit) {
     var notificationPrompt = function () {
         return window.Notification.requestPermission().then(function (permission) {
-            emit("notification:update", permission === "granted" ? permission : "denied");
+            emit(state.events.SETUP_PERMISSION_UPDATE, permission === "granted" ? permission : "denied");
         });
     };
 
-    return html(_templateObject, messages.setup.title, state.notifications.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notifications.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
+    return html(_templateObject, messages.setup.title, state.setup.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.setup.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
 };
 
 module.exports = setupView;
-},{"../messages":8,"choo/html":undefined}]},{},[3]);
+},{"../../messages":8,"choo/html":undefined}]},{},[3]);
