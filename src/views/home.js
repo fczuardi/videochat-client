@@ -3,6 +3,7 @@ import type { ChooView } from "../app";
 
 const html = require("choo/html");
 const messages = require("../messages");
+const styles = require('../styles');
 
 const homeView: ChooView = (state, emit) => {
     const errorMsg = state.errors.api
@@ -16,22 +17,24 @@ const homeView: ChooView = (state, emit) => {
     };
     const onLoad = event => {
         const room = state.chat.room;
-        if (!room){
+        if (!room) {
             return null;
         }
         emit(state.events.CHAT_INIT, { room, publishFirst });
-    }
-    const manualRoomForm = state.chat.room ? state.ui.roomStatus : html`
+    };
+    const manualRoomForm = state.chat.room
+        ? state.ui.roomStatus
+        : html`
         <form onsubmit=${onSubmit}>
             <textarea name="ot">${JSON.stringify(state.chat.room)}</textarea>
             <input type="submit" />
         </form>`;
     const videochat = html`
-        <div id="videos">
-            <div id="publisher"></div>
-            <div id="subscriber"></div>
+        <div id="videos" style=${styles.videoContainer}>
+            <div id="publisher" style=${styles.publisherDiv}></div>
+            <div id="subscriber" style=${styles.subscriberDiv}></div>
         </div>`;
-    videochat.isSameNode = target => (target.id === 'videos');
+    videochat.isSameNode = target => target.id === "videos";
     onLoad();
     return html`
 <div>

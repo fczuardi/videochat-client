@@ -1,5 +1,7 @@
 // @flow
 const OT = require("@opentok/client");
+const extend = require("xtend");
+const config = require("./config");
 
 type InitializeSession = (state: Object, emitter: Object) => void;
 const initializeSession: InitializeSession = (state, emitter) => {
@@ -18,19 +20,15 @@ const initializeSession: InitializeSession = (state, emitter) => {
     const session = OT.initSession(apiKey, sessionId);
 
     const initPublisher = () => {
-        return OT.initPublisher(
-            "publisher",
-            {
-                insertMode: "append",
-                width: "100%",
-                height: "100%"
-            },
-            handleResponse()
-        );
+        const name = state.user && state.user.name || '';
+        const pubOptions = extend(config.opentok.publisherProperties, {
+            insertMode: "append",
+            name
+        });
+        return OT.initPublisher( "publisher", pubOptions, handleResponse());
     };
-    // Connect to the session
+
     session.connect(token, error => {
-        // If the connection is successful, publish to the session
         if (error) {
             handleResponse()(error);
         } else {
@@ -38,22 +36,12 @@ const initializeSession: InitializeSession = (state, emitter) => {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
-            // Subscribe to a newly created stream
             session.on("streamCreated", event => {
-                // Create a publisher
                 if (!state.chat.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
-                session.subscribe(
-                    event.stream,
-                    "subscriber",
-                    {
-                        insertMode: "append",
-                        width: "100%",
-                        height: "100%"
-                    },
-                    handleResponse("connected")
-                );
+                const subOptions = extend(config.opentok.subscriberProperties, {insertMode: "append"})
+                session.subscribe( event.stream, "subscriber", subOptions, handleResponse("connected"));
             });
         }
     });

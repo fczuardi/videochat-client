@@ -2,6 +2,7 @@
 import type { ChooView } from "../app";
 const html = require("choo/html");
 const messages = require("../messages").embed.home;
+const styles = require('../styles');
 
 const homeView: ChooView = (state, emit) => {
     const requestRoom = event => {
@@ -11,11 +12,11 @@ const homeView: ChooView = (state, emit) => {
         ? html`<p>${state.errors.api.message}</p>`
         : "";
     const videochat = html`
-        <div id="videos">
-            <div id="publisher"></div>
-            <div id="subscriber"></div>
+        <div id="videos" style=${styles.videoContainer}>
+            <div id="publisher" style=${styles.publisherDiv}></div>
+            <div id="subscriber" style=${styles.subscriberDiv}></div>
         </div>`;
-    videochat.isSameNode = target => (target.id === 'videos');
+    videochat.isSameNode = target => target.id === "videos";
     return html`
 <div>
     <div>

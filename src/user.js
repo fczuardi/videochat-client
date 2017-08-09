@@ -16,7 +16,7 @@ const extend = require("xtend");
 
 const userReducer: ChooMiddleware = (state, emitter) => {
     state.user = ({
-        username: null,
+        username: null, // the input value on login form, before backend return of the id
         id: null
     }: User);
 

@@ -7,3 +7,22 @@ themeColor = "#FFFFFF"
 [api]
 url = "http://localhost:4000/graphql/"
 
+[opentok]
+
+# see https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher for a list of available properties
+[opentok.publisherProperties]
+width = 100
+height = 100
+
+[opentok.subscriberProperties]
+width = "100%"
+height = "100%"
+# fitMode = "cover"
+# insertDefaultUI = true
+# showControls = true
+# backgroundImageURI =""
+# mirror = true
+# audioBitrate = 40000
+# audioFallbackEnabled = true
+# disableAudioProcessing = false
+
