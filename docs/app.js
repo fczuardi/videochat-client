@@ -1,46 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "http://localhost:4000/graphql/" }, "opentok": { "publisherProperties": { "width": 100, "height": 100 }, "subscriberProperties": { "width": "100%", "height": "100%" } } };
 },{}],2:[function(require,module,exports){
-//      
-
-
-var _require = require("./network"),
-    apiCall = _require.apiCall;
-
-var apiReducers = function (state, emitter) {
-    state.api = {};
-
-    emitter.on(state.events.API_PUSHSERVER_PUBKEY, function () {
-        var query = "\n        {\n            pushServer {\n                pubKey\n            }\n        }";
-        return apiCall({ query: query }, function (err, resp, body) {
-            if (err || !body.data.pushServer) {
-                if (err) {
-                    return emitter.emit(state.events.ERROR_API, err);
-                }
-                return emitter.emit(state.events.ERROR_API, new Error("API return dont have a pubkey value"));
-            }
-            return emitter.emit(state.events.WORKER_SERVERKEY, body.data.pushServer.pubKey);
-        });
-    });
-
-    emitter.on(state.events.API_USER_UPDATE, function (variables) {
-        var query = "\n        mutation($id:ID!, $update: UserInput) {\n            updateUser(id:$id, update:$update){\n                id\n                name\n                email\n                groups\n                webPushInfo {\n                    endpoint\n                    key\n                    auth\n                }\n            }\n        }";
-        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
-            if (err) {
-                return emitter.emit(state.events.ERROR_API, err);
-            }
-            if (body.errors) {
-                return emitter.emit(state.events.ERROR_API, new Error(body.errors.map(function (err) {
-                    return err.message;
-                }).join(", ")));
-            }
-            return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
-        });
-    });
-};
-
-module.exports = apiReducers;
-},{"./network":8}],3:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<div>404</div>"], ["<div>404</div>"]),
     _templateObject2 = _taggedTemplateLiteral(["<div>Loading...</div>"], ["<div>Loading...</div>"]);
 
@@ -52,15 +12,15 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 var app = require("choo")();
 var html = require("choo/html");
 var eventNames = require("./eventNames");
-var setupReducer = require("./reducers/setup");
-var serviceWorkerReducer = require("./reducers/serviceWorker");
-var apiReducer = require("./api.app");
-var errorReducer = require("./error");
-var userReducer = require("./user");
-var chatReducer = require("./reducers/chat");
 var setupView = require("./views/app/setup");
 var loginView = require("./views/app/login");
 var homeView = require("./views/app/home");
+var errorReducer = require("./reducers/error");
+var chatReducer = require("./reducers/chat");
+var setupReducer = require("./reducers/app/setup");
+var serviceWorkerReducer = require("./reducers/app/serviceWorker");
+var apiReducer = require("./reducers/app/api");
+var userReducer = require("./reducers/app/user");
 
 var notFoundView = function (state, emit) {
     return html(_templateObject);
@@ -99,38 +59,10 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.app":2,"./error":5,"./eventNames":6,"./reducers/chat":10,"./reducers/serviceWorker":11,"./reducers/setup":12,"./user":15,"./views/app/home":16,"./views/app/login":17,"./views/app/setup":18,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
+},{"./eventNames":4,"./reducers/app/api":8,"./reducers/app/serviceWorker":9,"./reducers/app/setup":10,"./reducers/app/user":11,"./reducers/chat":12,"./reducers/error":13,"./views/app/home":16,"./views/app/login":17,"./views/app/setup":18,"choo":undefined,"choo/html":undefined}],3:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
-},{"../config.toml":1}],5:[function(require,module,exports){
-//      
-
-
-var ERROR_API = "error:api";
-
-var errorReducer = function (state, emitter) {
-    state.errors = {
-        api: null
-    };
-
-    state.events.ERROR_API = ERROR_API;
-
-    var clearApiError = function () {
-        state.errors.api = null;
-    };
-
-    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
-    emitter.on(state.events.API_ROOM, clearApiError);
-    emitter.on(state.events.API_USER_UPDATE, clearApiError);
-
-    emitter.on(ERROR_API, function (err) {
-        console.error(err);
-        state.errors.api = err;
-    });
-};
-
-module.exports = errorReducer;
-},{}],6:[function(require,module,exports){
+},{"../config.toml":1}],4:[function(require,module,exports){
 //      
 
 var eventNames = {
@@ -164,7 +96,7 @@ var events = function (state) {
 };
 
 module.exports = events;
-},{}],7:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = {
     embed: {
         default: {
@@ -197,7 +129,7 @@ module.exports = {
         signup: "Signup"
     }
 };
-},{}],8:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 //      
 
 
@@ -219,7 +151,7 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":4,"xhr":undefined}],9:[function(require,module,exports){
+},{"./config":3,"xhr":undefined}],7:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 var extend = require("xtend");
@@ -277,54 +209,51 @@ var initializeSession = function (state, emitter) {
 };
 
 module.exports = initializeSession;
-},{"./config":4,"@opentok/client":undefined,"xtend":undefined}],10:[function(require,module,exports){
+},{"./config":3,"@opentok/client":undefined,"xtend":undefined}],8:[function(require,module,exports){
 //      
 
 
-var opentok = require("../opentok");
+var _require = require("../../network"),
+    apiCall = _require.apiCall;
 
-var chatReducer = function (state, emitter) {
-    state.chat = {
-        room: null,
-        roomSatus: "disconnected",
-        publishFirst: false
-    };
+var apiReducers = function (state, emitter) {
+    state.api = {};
 
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
-        state.chat.roomStatus = newStatus;
-        return emitter.emit(state.events.RENDER);
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, function () {
+        var query = "\n        {\n            pushServer {\n                pubKey\n            }\n        }";
+        return apiCall({ query: query }, function (err, resp, body) {
+            if (err || !body.data.pushServer) {
+                if (err) {
+                    return emitter.emit(state.events.ERROR_API, err);
+                }
+                return emitter.emit(state.events.ERROR_API, new Error("API return dont have a pubkey value"));
+            }
+            return emitter.emit(state.events.WORKER_SERVERKEY, body.data.pushServer.pubKey);
+        });
     });
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
-        state.chat.room = room;
-    });
-
-    emitter.on(state.events.CHAT_INIT, function (_ref) {
-        var room = _ref.room,
-            publishFirst = _ref.publishFirst;
-
-        state.chat.room = room;
-        state.chat.publishFirst = publishFirst;
-        opentok(state, emitter);
-    });
-
-    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
-        if (status !== "waiting" || state.chat.publishFirst) {
-            return null;
-        }
-        return emitter.emit(state.events.API_NOTIFYGROUP, {
-            groupId: state.params.groupId,
-            room: state.chat.room
+    emitter.on(state.events.API_USER_UPDATE, function (variables) {
+        var query = "\n        mutation($id:ID!, $update: UserInput) {\n            updateUser(id:$id, update:$update){\n                id\n                name\n                email\n                groups\n                webPushInfo {\n                    endpoint\n                    key\n                    auth\n                }\n            }\n        }";
+        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
+            if (err) {
+                return emitter.emit(state.events.ERROR_API, err);
+            }
+            if (body.errors) {
+                return emitter.emit(state.events.ERROR_API, new Error(body.errors.map(function (err) {
+                    return err.message;
+                }).join(", ")));
+            }
+            return emitter.emit(state.events.USER_UPDATED, body.data.updateUser);
         });
     });
 };
 
-module.exports = chatReducer;
-},{"../opentok":9}],11:[function(require,module,exports){
+module.exports = apiReducers;
+},{"../../network":6}],9:[function(require,module,exports){
 //      
 
 
-var toUint8Array = require("../urlBase64ToUint8Array");
+var toUint8Array = require("../../urlBase64ToUint8Array");
 
 var workerFilePath = "./sw.js";
 
@@ -380,7 +309,7 @@ var worker = function (state, emitter) {
 };
 
 module.exports = worker;
-},{"../urlBase64ToUint8Array":14}],12:[function(require,module,exports){
+},{"../../urlBase64ToUint8Array":15}],10:[function(require,module,exports){
 //      
 
 
@@ -395,29 +324,7 @@ var setup = function (state, emitter) {
 };
 
 module.exports = setup;
-},{}],13:[function(require,module,exports){
-//      
-module.exports = {
-    videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
-    publisherDiv: "\nposition: absolute;\nz-index: 2;\nbottom: 0;\nright: 0;\noverflow:hidden;\nborder-radius: 100px;\n    ",
-    subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
-};
-},{}],14:[function(require,module,exports){
-// from https://github.com/web-push-libs/web-push
-function urlBase64ToUint8Array(base64String) {
-    var padding = "=".repeat((4 - base64String.length % 4) % 4);
-    var base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
-
-    var rawData = window.atob(base64);
-    var outputArray = new Uint8Array(rawData.length);
-
-    for (var i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-module.exports = urlBase64ToUint8Array;
-},{}],15:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 //      
 
 
@@ -445,7 +352,100 @@ var userReducer = function (state, emitter) {
 };
 
 module.exports = userReducer;
-},{"xtend":undefined}],16:[function(require,module,exports){
+},{"xtend":undefined}],12:[function(require,module,exports){
+//      
+
+
+var opentok = require("../opentok");
+
+var chatReducer = function (state, emitter) {
+    state.chat = {
+        room: null,
+        roomSatus: "disconnected",
+        publishFirst: false
+    };
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
+        state.chat.roomStatus = newStatus;
+        return emitter.emit(state.events.RENDER);
+    });
+
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
+        state.chat.room = room;
+    });
+
+    emitter.on(state.events.CHAT_INIT, function (_ref) {
+        var room = _ref.room,
+            publishFirst = _ref.publishFirst;
+
+        state.chat.room = room;
+        state.chat.publishFirst = publishFirst;
+        opentok(state, emitter);
+    });
+
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
+        if (status !== "waiting" || state.chat.publishFirst) {
+            return null;
+        }
+        return emitter.emit(state.events.API_NOTIFYGROUP, {
+            groupId: state.params.groupId,
+            room: state.chat.room
+        });
+    });
+};
+
+module.exports = chatReducer;
+},{"../opentok":7}],13:[function(require,module,exports){
+//      
+
+
+var ERROR_API = "error:api";
+
+var errorReducer = function (state, emitter) {
+    state.errors = {
+        api: null
+    };
+
+    state.events.ERROR_API = ERROR_API;
+
+    var clearApiError = function () {
+        state.errors.api = null;
+    };
+
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+    emitter.on(state.events.API_ROOM, clearApiError);
+    emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+    emitter.on(ERROR_API, function (err) {
+        console.error(err);
+        state.errors.api = err;
+    });
+};
+
+module.exports = errorReducer;
+},{}],14:[function(require,module,exports){
+//      
+module.exports = {
+    videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
+    publisherDiv: "\nposition: absolute;\nz-index: 2;\nbottom: 0;\nright: 0;\noverflow:hidden;\nborder-radius: 100px;\n    ",
+    subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
+};
+},{}],15:[function(require,module,exports){
+// from https://github.com/web-push-libs/web-push
+function urlBase64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (var i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+module.exports = urlBase64ToUint8Array;
+},{}],16:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"], ["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"]),
     _templateObject3 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
@@ -485,7 +485,7 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"../../messages":7,"../../styles":13,"choo/html":undefined}],17:[function(require,module,exports){
+},{"../../messages":5,"../../styles":14,"choo/html":undefined}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
     _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
@@ -511,7 +511,7 @@ var loginView = function (state, emit) {
 };
 
 module.exports = loginView;
-},{"../../messages":7,"choo/html":undefined}],18:[function(require,module,exports){
+},{"../../messages":5,"choo/html":undefined}],18:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -532,4 +532,4 @@ var setupView = function (state, emit) {
 };
 
 module.exports = setupView;
-},{"../../messages":7,"choo/html":undefined}]},{},[3]);
+},{"../../messages":5,"choo/html":undefined}]},{},[2]);

@@ -1,7 +1,7 @@
 // @flow
-import type { ChooMiddleware } from "../app";
+import type { ChooMiddleware } from "../../app";
 
-const toUint8Array = require("../urlBase64ToUint8Array");
+const toUint8Array = require("../../urlBase64ToUint8Array");
 
 const workerFilePath = "./sw.js";
 

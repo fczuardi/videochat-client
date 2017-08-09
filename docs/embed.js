@@ -1,70 +1,20 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "http://localhost:4000/graphql/" }, "opentok": { "publisherProperties": { "width": 100, "height": 100 }, "subscriberProperties": { "width": "100%", "height": "100%" } } };
 },{}],2:[function(require,module,exports){
-//      
-
-
-var _require = require("./network"),
-    apiCall = _require.apiCall;
-
-var apiReducers = function (state, emitter) {
-    state.api = {};
-
-    emitter.on(state.events.API_ROOM, function () {
-        var query = "\n        {\n            room {\n                apiKey\n                sessionId\n                token\n            }\n        }";
-        emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "requesting");
-        return apiCall({ query: query }, function (err, resp, body) {
-            if (err || !body.data.room) {
-                if (err) {
-                    emitter.emit(state.events.ERROR_API, err);
-                }
-                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
-            }
-            var room = body.data.room;
-            var publishFirst = false;
-            return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
-        });
-    });
-    emitter.on(state.events.API_NOTIFYGROUP, function (_ref) {
-        var groupId = _ref.groupId,
-            room = _ref.room;
-
-        var query = "\n        mutation($groupId:ID!, $payload:String){\n            notifyUserGroup(id:$groupId, payload:$payload)\n        }";
-        var roomEncoded = JSON.stringify(room);
-        var payload = JSON.stringify({
-            title: "Support call",
-            options: {
-                body: "From group " + groupId,
-                data: room
-            }
-        });
-        var variables = { groupId: groupId, payload: payload };
-        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
-            if (err) {
-                emitter.emit(state.events.ERROR_API, err);
-                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
-            }
-            return console.log(body.data);
-        });
-    });
-};
-
-module.exports = apiReducers;
-},{"./network":8}],3:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
-},{"../config.toml":1}],4:[function(require,module,exports){
+},{"../config.toml":1}],3:[function(require,module,exports){
 //      
 
 
 var app = require("choo")();
 var html = require("choo/html");
 var eventNames = require("./eventNames");
-var apiReducer = require("./api.embed");
-var errorReducer = require("./error");
-var chatReducer = require("./reducers/chat");
 var defaultView = require("./views/embed/default");
-var embedView = require("./views/embed");
+var embedView = require("./views/embed/home");
+var errorReducer = require("./reducers/error");
+var chatReducer = require("./reducers/chat");
+var apiReducer = require("./reducers/embed/api");
 
 app.use(eventNames);
 app.use(apiReducer);
@@ -77,35 +27,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(app.start());
-},{"./api.embed":2,"./error":5,"./eventNames":6,"./reducers/chat":10,"./views/embed":12,"./views/embed/default":13,"choo":undefined,"choo/html":undefined}],5:[function(require,module,exports){
-//      
-
-
-var ERROR_API = "error:api";
-
-var errorReducer = function (state, emitter) {
-    state.errors = {
-        api: null
-    };
-
-    state.events.ERROR_API = ERROR_API;
-
-    var clearApiError = function () {
-        state.errors.api = null;
-    };
-
-    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
-    emitter.on(state.events.API_ROOM, clearApiError);
-    emitter.on(state.events.API_USER_UPDATE, clearApiError);
-
-    emitter.on(ERROR_API, function (err) {
-        console.error(err);
-        state.errors.api = err;
-    });
-};
-
-module.exports = errorReducer;
-},{}],6:[function(require,module,exports){
+},{"./eventNames":4,"./reducers/chat":8,"./reducers/embed/api":9,"./reducers/error":10,"./views/embed/default":12,"./views/embed/home":13,"choo":undefined,"choo/html":undefined}],4:[function(require,module,exports){
 //      
 
 var eventNames = {
@@ -139,7 +61,7 @@ var events = function (state) {
 };
 
 module.exports = events;
-},{}],7:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = {
     embed: {
         default: {
@@ -172,7 +94,7 @@ module.exports = {
         signup: "Signup"
     }
 };
-},{}],8:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 //      
 
 
@@ -194,7 +116,7 @@ var apiCall = function (body, cb) {
 module.exports = {
     apiCall: apiCall
 };
-},{"./config":3,"xhr":undefined}],9:[function(require,module,exports){
+},{"./config":2,"xhr":undefined}],7:[function(require,module,exports){
 //      
 var OT = require("@opentok/client");
 var extend = require("xtend");
@@ -252,7 +174,7 @@ var initializeSession = function (state, emitter) {
 };
 
 module.exports = initializeSession;
-},{"./config":3,"@opentok/client":undefined,"xtend":undefined}],10:[function(require,module,exports){
+},{"./config":2,"@opentok/client":undefined,"xtend":undefined}],8:[function(require,module,exports){
 //      
 
 
@@ -295,7 +217,85 @@ var chatReducer = function (state, emitter) {
 };
 
 module.exports = chatReducer;
-},{"../opentok":9}],11:[function(require,module,exports){
+},{"../opentok":7}],9:[function(require,module,exports){
+//      
+
+
+var _require = require("../../network"),
+    apiCall = _require.apiCall;
+
+var apiReducers = function (state, emitter) {
+    state.api = {};
+
+    emitter.on(state.events.API_ROOM, function () {
+        var query = "\n        {\n            room {\n                apiKey\n                sessionId\n                token\n            }\n        }";
+        emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "requesting");
+        return apiCall({ query: query }, function (err, resp, body) {
+            if (err || !body.data.room) {
+                if (err) {
+                    emitter.emit(state.events.ERROR_API, err);
+                }
+                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
+            }
+            var room = body.data.room;
+            var publishFirst = false;
+            return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
+        });
+    });
+    emitter.on(state.events.API_NOTIFYGROUP, function (_ref) {
+        var groupId = _ref.groupId,
+            room = _ref.room;
+
+        var query = "\n        mutation($groupId:ID!, $payload:String){\n            notifyUserGroup(id:$groupId, payload:$payload)\n        }";
+        var roomEncoded = JSON.stringify(room);
+        var payload = JSON.stringify({
+            title: "Support call",
+            options: {
+                body: "From group " + groupId,
+                data: room
+            }
+        });
+        var variables = { groupId: groupId, payload: payload };
+        return apiCall({ query: query, variables: variables }, function (err, resp, body) {
+            if (err) {
+                emitter.emit(state.events.ERROR_API, err);
+                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
+            }
+            return console.log(body.data);
+        });
+    });
+};
+
+module.exports = apiReducers;
+},{"../../network":6}],10:[function(require,module,exports){
+//      
+
+
+var ERROR_API = "error:api";
+
+var errorReducer = function (state, emitter) {
+    state.errors = {
+        api: null
+    };
+
+    state.events.ERROR_API = ERROR_API;
+
+    var clearApiError = function () {
+        state.errors.api = null;
+    };
+
+    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+    emitter.on(state.events.API_ROOM, clearApiError);
+    emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+    emitter.on(ERROR_API, function (err) {
+        console.error(err);
+        state.errors.api = err;
+    });
+};
+
+module.exports = errorReducer;
+},{}],11:[function(require,module,exports){
 //      
 module.exports = {
     videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
@@ -303,32 +303,6 @@ module.exports = {
     subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
 };
 },{}],12:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
-    _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
-
-function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-//      
-
-var html = require("choo/html");
-var messages = require("../messages").embed.home;
-var styles = require("../styles");
-
-var homeView = function (state, emit) {
-    var requestRoom = function (event) {
-        emit(state.events.API_ROOM);
-    };
-    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    var videochat = html(_templateObject2, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
-    videochat.isSameNode = function (target) {
-        return target.id === "videos";
-    };
-    return html(_templateObject3, errorMsg, state.chat.roomStatus, requestRoom, messages.call, videochat);
-};
-
-module.exports = homeView;
-},{"../messages":7,"../styles":11,"choo/html":undefined}],13:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"], ["\n<div>\n    <h1>", "</h1>\n    <p>", "</p>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
@@ -343,4 +317,31 @@ var defaultView = function (state, emit) {
 };
 
 module.exports = defaultView;
-},{"../../messages":7,"choo/html":undefined}]},{},[4]);
+},{"../../messages":5,"choo/html":undefined}],13:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
+    _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
+
+function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+//      
+
+
+var html = require("choo/html");
+var messages = require("../../messages").embed.home;
+var styles = require("../../styles");
+
+var homeView = function (state, emit) {
+    var requestRoom = function (event) {
+        emit(state.events.API_ROOM);
+    };
+    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    var videochat = html(_templateObject2, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
+    videochat.isSameNode = function (target) {
+        return target.id === "videos";
+    };
+    return html(_templateObject3, errorMsg, state.chat.roomStatus, requestRoom, messages.call, videochat);
+};
+
+module.exports = homeView;
+},{"../../messages":5,"../../styles":11,"choo/html":undefined}]},{},[3]);

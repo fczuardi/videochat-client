@@ -1,7 +1,7 @@
 // @flow
-import type { ChooMiddleware } from "./app";
+import type { ChooMiddleware } from "../../app";
 
-const { apiCall } = require("./network");
+const { apiCall } = require("../../network");
 
 const apiReducers: ChooMiddleware = (state, emitter) => {
     state.api = {};

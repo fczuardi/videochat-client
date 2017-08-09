@@ -1,5 +1,5 @@
 // @flow
-import type { ChooMiddleware } from "../app";
+import type { ChooMiddleware } from "../../app";
 
 const setup: ChooMiddleware = (state, emitter) => {
     state.setup = {

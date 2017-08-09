@@ -5,15 +5,15 @@ export type ChooMiddleware = (state: Object, emitter: Object) => any;
 const app = require("choo")();
 const html = require("choo/html");
 const eventNames = require("./eventNames");
-const setupReducer = require("./reducers/setup");
-const serviceWorkerReducer = require("./reducers/serviceWorker");
-const apiReducer = require("./api.app");
-const errorReducer = require("./error");
-const userReducer = require("./user");
-const chatReducer = require("./reducers/chat");
 const setupView = require("./views/app/setup");
 const loginView = require("./views/app/login");
 const homeView = require("./views/app/home");
+const errorReducer = require("./reducers/error");
+const chatReducer = require("./reducers/chat");
+const setupReducer = require("./reducers/app/setup");
+const serviceWorkerReducer = require("./reducers/app/serviceWorker");
+const apiReducer = require("./reducers/app/api");
+const userReducer = require("./reducers/app/user");
 
 const notFoundView: ChooView = (state, emit) => {
     return html`<div>404</div>`;

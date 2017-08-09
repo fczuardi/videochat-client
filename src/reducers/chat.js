@@ -2,7 +2,6 @@
 import type { ChooMiddleware } from "../app";
 type RoomStatus = "disconnected" | "requesting" | "waiting" | "connected";
 
-
 const opentok = require("../opentok");
 
 const chatReducer: ChooMiddleware = (state, emitter) => {

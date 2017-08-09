@@ -1,5 +1,5 @@
 // @flow
-import type { ChooMiddleware } from "./app";
+import type { ChooMiddleware } from "../../app";
 export type User = {
     id: string | null,
     name?: string,

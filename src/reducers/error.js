@@ -1,5 +1,5 @@
 // @flow
-import type { ChooMiddleware } from "./app";
+import type { ChooMiddleware } from "../app";
 
 const ERROR_API = "error:api";
 
