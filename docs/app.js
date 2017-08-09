@@ -41,6 +41,11 @@ var apiReducers = function (state, emitter) {
 
 module.exports = apiReducers;
 },{"./network":9}],3:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["<div>404</div>"], ["<div>404</div>"]),
+    _templateObject2 = _taggedTemplateLiteral(["<div>Loading...</div>"], ["<div>Loading...</div>"]);
+
+function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
 //      
 
 
@@ -57,13 +62,23 @@ var setupView = require("./views/setup");
 var loginView = require("./views/login");
 var homeView = require("./views/home");
 
+var notFoundView = function (state, emit) {
+    return html(_templateObject);
+};
+
 var mainView = function (state, emit) {
     if (state.notifications.permission !== "granted") {
         return setupView(state, emit);
     }
     if (!state.user.id) {
+        if (state.params.userId) {
+            emit(state.events.USER_LOGIN, state.params.userId);
+            return html(_templateObject2);
+        }
+        emit(state.events.PUSHSTATE, "#login");
         return loginView(state, emit);
     }
+    emit(state.events.PUSHSTATE, "#home/" + state.user.id);
     return homeView(state, emit);
 };
 
@@ -74,9 +89,11 @@ app.use(notificationsReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
 app.use(chatReducer);
-app.route("*", mainView);
-app.route("#setup", setupView);
-app.route("#home", homeView);
+app.route("*", notFoundView);
+app.route("#login", mainView);
+app.route("#home", mainView);
+app.route("#login/:room", mainView);
+app.route("#home/:userId", mainView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
@@ -94,17 +111,20 @@ var chatReducer = function (state, emitter) {
         publishFirst: false
     };
 
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
+        state.chat.room = room;
+    });
+
     emitter.on(state.events.CHAT_INIT, function (_ref) {
         var room = _ref.room,
             publishFirst = _ref.publishFirst;
 
         state.chat.room = room;
-        state.publishFirst = publishFirst;
+        state.chat.publishFirst = publishFirst;
         opentok(state, emitter);
     });
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (status) {
-        console.log("Room update", status, state.chat.publishFirst);
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
         if (status !== "waiting" || state.chat.publishFirst) {
             return null;
         }
@@ -164,8 +184,9 @@ var eventNames = {
     API_USER_UPDATE: "api:updateUser",
     API_NOTIFYGROUP: "api:notifyGroup",
 
+    CHAT_ROOM_UPDATE: "chat:update",
     CHAT_INIT: "chat:init",
-    CHAT_ROOM_UPDATE: "chat:room:update",
+    CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
     USER_UPDATED: "user:updated"
@@ -183,7 +204,7 @@ module.exports = {
     embed: {
         default: {
             title: "Page not found",
-            description: "maybe you forgot to include the goup ID"
+            description: "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
             call: "Call"
@@ -240,12 +261,10 @@ module.exports = {
 var notifications = function (state, emitter) {
     state.notifications = {
         permission: window.Notification.permission
-    }, emitter.on("notification:update", function (permission) {
+    };
+    emitter.on("notification:update", function (permission) {
         state.notifications.permission = permission;
-        if (permission === "denied") {
-            return emitter.emit(state.events.RENDER);
-        }
-        emitter.emit("pushState", "#home");
+        return emitter.emit(state.events.RENDER);
     });
 };
 
@@ -270,7 +289,7 @@ var initializeSession = function (state, emitter) {
                 alert(error.message);
             }
             if (status) {
-                emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
+                emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, status);
             }
         };
     };
@@ -415,7 +434,7 @@ var userReducer = function (state, emitter) {
 module.exports = userReducer;
 },{"xtend":undefined}],15:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\"></textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\">", "</textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    <div id=\"publisher\"></div>\n    <div id=\"subscriber\"></div>\n    <form onsubmit=", ">\n        <textarea name=\"ot\">", "</textarea>\n        <input type=\"submit\" />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -433,7 +452,7 @@ var homeView = function (state, emit) {
         emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
     };
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    return html(_templateObject2, errorMsg, messages.home.user, state.user.name, state.user.email, onSubmit);
+    return html(_templateObject2, errorMsg, messages.home.user, state.user.name, state.user.email, onSubmit, JSON.stringify(state.chat.room));
 };
 
 module.exports = homeView;
@@ -449,6 +468,10 @@ var html = require("choo/html");
 var messages = require("../messages");
 
 var loginView = function (state, emit) {
+    if (state.params.room) {
+        var room = JSON.parse(state.params.room);
+        emit(state.events.CHAT_ROOM_UPDATE, room);
+    }
     var onSubmit = function (event) {
         event.preventDefault();
         var id = event.target.elements[0].value.trim();
@@ -460,7 +483,7 @@ var loginView = function (state, emit) {
 
 module.exports = loginView;
 },{"../messages":8,"choo/html":undefined}],17:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -483,7 +506,7 @@ var setupView = function (state, emit) {
         });
     };
 
-    return html(_templateObject, messages.setup.title, state.notifications.permission, state.notifications.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notifications.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
+    return html(_templateObject, messages.setup.title, state.notifications.permission !== "denied" ? messages.setup.description : messages.setup.permissionDenied, notificationPrompt, state.notifications.permission !== "denied" ? messages.setup.continue : messages.setup.tryAgain);
 };
 
 module.exports = setupView;

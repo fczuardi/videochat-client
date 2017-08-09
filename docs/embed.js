@@ -12,13 +12,13 @@ var apiReducers = function (state, emitter) {
 
     emitter.on(state.events.API_ROOM, function () {
         var query = "\n        {\n            room {\n                apiKey\n                sessionId\n                token\n            }\n        }";
-        emitter.emit(state.events.CHAT_ROOM_UPDATE, "requesting");
+        emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "requesting");
         return apiCall({ query: query }, function (err, resp, body) {
             if (err || !body.data.room) {
                 if (err) {
                     emitter.emit(state.events.ERROR_API, err);
                 }
-                return emitter.emit(state.events.CHAT_ROOM_UPDATE, "disconnected");
+                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
             }
             var room = body.data.room;
             var publishFirst = false;
@@ -42,7 +42,7 @@ var apiReducers = function (state, emitter) {
         return apiCall({ query: query, variables: variables }, function (err, resp, body) {
             if (err) {
                 emitter.emit(state.events.ERROR_API, err);
-                return emitter.emit(state.events.CHAT_ROOM_UPDATE, "disconnected");
+                return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
             }
             return console.log(body.data);
         });
@@ -62,17 +62,20 @@ var chatReducer = function (state, emitter) {
         publishFirst: false
     };
 
+    emitter.on(state.events.CHAT_ROOM_UPDATE, function (room) {
+        state.chat.room = room;
+    });
+
     emitter.on(state.events.CHAT_INIT, function (_ref) {
         var room = _ref.room,
             publishFirst = _ref.publishFirst;
 
         state.chat.room = room;
-        state.publishFirst = publishFirst;
+        state.chat.publishFirst = publishFirst;
         opentok(state, emitter);
     });
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (status) {
-        console.log("Room update", status, state.chat.publishFirst);
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (status) {
         if (status !== "waiting" || state.chat.publishFirst) {
             return null;
         }
@@ -107,7 +110,7 @@ app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);
 app.route("*", defaultView);
-app.route("*#group/:groupId", embedView);
+app.route("#group/:groupId", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
@@ -158,8 +161,9 @@ var eventNames = {
     API_USER_UPDATE: "api:updateUser",
     API_NOTIFYGROUP: "api:notifyGroup",
 
+    CHAT_ROOM_UPDATE: "chat:update",
     CHAT_INIT: "chat:init",
-    CHAT_ROOM_UPDATE: "chat:room:update",
+    CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
     USER_UPDATED: "user:updated"
@@ -177,7 +181,7 @@ module.exports = {
     embed: {
         default: {
             title: "Page not found",
-            description: "maybe you forgot to include the goup ID"
+            description: "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
             call: "Call"
@@ -247,7 +251,7 @@ var initializeSession = function (state, emitter) {
                 alert(error.message);
             }
             if (status) {
-                emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
+                emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, status);
             }
         };
     };
@@ -296,7 +300,7 @@ var uiReducer = function (state, emitter) {
         roomSatus: "disconnected"
     };
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, function (newStatus) {
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
         state.ui.roomStatus = newStatus;
         if (newStatus !== "connected") {
             return emitter.emit(state.events.RENDER);
