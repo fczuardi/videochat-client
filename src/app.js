@@ -20,6 +20,7 @@ const notFoundView: ChooView = (state, emit) => {
 };
 
 const mainView = (state, emit) => {
+    console.log(state.route)
     if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }

@@ -27,6 +27,7 @@ var notFoundView = function (state, emit) {
 };
 
 var mainView = function (state, emit) {
+    console.log(state.route);
     if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }
