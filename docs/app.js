@@ -61,15 +61,15 @@ app.use(userReducer);
 app.use(chatReducer);
 app.route("*", notFoundView);
 app.route("/", mainView);
-app.route("#login", mainView);
-app.route("#home", mainView);
-app.route("#login/:room", mainView);
-app.route("#home/:userId", mainView);
+app.route("/login", mainView);
+app.route("/home", mainView);
+app.route("/login/:room", mainView);
+app.route("/home/:userId", mainView);
 app.route("/videochat-client/app.html", mainView);
-app.route("/videochat-client/app.html#login", mainView);
-app.route("/videochat-client/app.html#home", mainView);
-app.route("/videochat-client/app.html#login/:room", mainView);
-app.route("/videochat-client/app.html#home/:userId", mainView);
+app.route("/videochat-client/app.html/login", mainView);
+app.route("/videochat-client/app.html/home", mainView);
+app.route("/videochat-client/app.html/login/:room", mainView);
+app.route("/videochat-client/app.html/home/:userId", mainView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
