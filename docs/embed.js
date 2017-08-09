@@ -21,9 +21,8 @@ app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);
 app.route("/videochat-client/embed.html/group/:groupId", embedView);
-app.route("/videochat-client/embed.html", embedView);
 app.route("/group/:groupId", embedView);
-// app.route("*", defaultView);
+app.route("*", defaultView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
