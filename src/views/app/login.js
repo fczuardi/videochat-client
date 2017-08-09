@@ -8,13 +8,13 @@ const loginView: ChooView = (state, emit) => {
         event.preventDefault();
         const username = event.target.elements[0].value.trim();
         const saveLocally = event.target.elements[1].checked;
-        emit(state.events.USER_LOGIN, {username, saveLocally});
+        emit(state.events.USER_LOGIN, { username, saveLocally });
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}`
         : "";
     const saveLocally = state.user.saveLocally;
-    const labelStyle = "display:block;"
+    const labelStyle = "display:block;";
     return html`
 <div>
     ${errorMsg}

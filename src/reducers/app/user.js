@@ -21,7 +21,7 @@ const userReducer: ChooMiddleware = (state, emitter) => {
         id: null
     }: User);
 
-    emitter.on(state.events.USER_LOGIN, ({username, saveLocally}) => {
+    emitter.on(state.events.USER_LOGIN, ({ username, saveLocally }) => {
         state.user.username = username;
         state.user.saveLocally = saveLocally;
         emitter.emit(state.events.WORKER_REGISTER);
@@ -32,8 +32,8 @@ const userReducer: ChooMiddleware = (state, emitter) => {
     emitter.on(state.events.USER_UPDATED, user => {
         state.user = extend(state.user, user);
         if (state.user.saveLocally) {
-            window.localStorage.setItem('userId', state.user.id);
-            window.localStorage.setItem('saveLocally', 'yes');
+            window.localStorage.setItem("userId", state.user.id);
+            window.localStorage.setItem("saveLocally", "yes");
         }
 
         emitter.emit(state.events.RENDER);
