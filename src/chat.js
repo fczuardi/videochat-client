@@ -9,7 +9,7 @@ const chatReducer: ChooMiddleware = (state, emitter) => {
         publishFirst: false
     };
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, (room) => {
+    emitter.on(state.events.CHAT_ROOM_UPDATE, room => {
         state.chat.room = room;
     });
 

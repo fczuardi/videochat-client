@@ -23,17 +23,17 @@ const mainView = (state, emit) => {
     if (state.notifications.permission !== "granted") {
         return setupView(state, emit);
     }
-    if (!state.user.id){
+    if (!state.user.id) {
         if (state.params.userId) {
             emit(state.events.USER_LOGIN, state.params.userId);
             return html`<div>Loading...</div>`;
         }
-        emit(state.events.PUSHSTATE, '#login');
+        emit(state.events.PUSHSTATE, "#login");
         return loginView(state, emit);
     }
-    emit(state.events.PUSHSTATE, `#home/${state.user.id}`)
+    emit(state.events.PUSHSTATE, `#home/${state.user.id}`);
     return homeView(state, emit);
-}
+};
 
 app.use(eventNames);
 app.use(apiReducer);
