@@ -16,7 +16,7 @@ const apiReducer = require("./reducers/app/api");
 const userReducer = require("./reducers/app/user");
 
 const notFoundView: ChooView = (state, emit) => {
-    return html`<div>404</div>`;
+    return html`<div>404 "${state.route}"</div>`;
 };
 
 const mainView = (state, emit) => {
