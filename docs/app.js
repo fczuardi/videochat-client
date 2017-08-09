@@ -31,8 +31,17 @@ var mainView = function (state, emit) {
         return setupView(state, emit);
     }
     if (!state.user.id) {
-        if (state.params.userId) {
-            emit(state.events.USER_LOGIN, state.params.userId);
+        if (state.params.room) {
+            emit(state.events.CHAT_ROOM_UPDATE, JSON.parse(state.params.room));
+        }
+        var localUserId = state.params.userId || window.localStorage.getItem("userId");
+        if (localUserId && !state.errors.api) {
+            var saveLocallyValue = window.localStorage.getItem("saveLocally");
+            var saveLocally = saveLocallyValue && saveLocallyValue === "yes";
+            emit(state.events.USER_LOGIN, {
+                username: localUserId,
+                saveLocally: saveLocally
+            });
             return html(_templateObject2);
         }
         emit(state.events.PUSHSTATE, "#login");
@@ -107,17 +116,20 @@ module.exports = {
             call: "Call"
         }
     },
+    app: {
+        login: {
+            userId: "Secret",
+            userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
+            login: "Login",
+            remember: "Remember login"
+        }
+    },
     setup: {
         title: "Setup",
         description: "Please allow notifications from this app.",
         continue: "Continue",
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
-    },
-    login: {
-        userId: "Your user ID",
-        userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
-        login: "Login"
     },
     home: {
         user: "User"
@@ -333,11 +345,16 @@ var extend = require("xtend");
 var userReducer = function (state, emitter) {
     state.user = {
         username: null, // the input value on login form, before backend return of the id
+        saveLocally: true,
         id: null
     };
 
-    emitter.on(state.events.USER_LOGIN, function (username) {
+    emitter.on(state.events.USER_LOGIN, function (_ref) {
+        var username = _ref.username,
+            saveLocally = _ref.saveLocally;
+
         state.user.username = username;
+        state.user.saveLocally = saveLocally;
         emitter.emit(state.events.WORKER_REGISTER);
     });
 
@@ -347,6 +364,11 @@ var userReducer = function (state, emitter) {
 
     emitter.on(state.events.USER_UPDATED, function (user) {
         state.user = extend(state.user, user);
+        if (state.user.saveLocally) {
+            window.localStorage.setItem("userId", state.user.id);
+            window.localStorage.setItem("saveLocally", "yes");
+        }
+
         emitter.emit(state.events.RENDER);
     });
 };
@@ -487,27 +509,26 @@ var homeView = function (state, emit) {
 module.exports = homeView;
 },{"../../messages":5,"../../styles":14,"choo/html":undefined}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label>\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label style=", ">\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <label style=", ">\n            ", "\n            <input\n                type=\"checkbox\"\n                name=\"saveLocally\"\n                checked=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label style=", ">\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <label style=", ">\n            ", "\n            <input\n                type=\"checkbox\"\n                name=\"saveLocally\"\n                checked=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 //      
 
 var html = require("choo/html");
-var messages = require("../../messages");
+var messages = require("../../messages").app.login;
 
 var loginView = function (state, emit) {
-    if (state.params.room) {
-        var room = JSON.parse(state.params.room);
-        emit(state.events.CHAT_ROOM_UPDATE, room);
-    }
     var onSubmit = function (event) {
         event.preventDefault();
-        var id = event.target.elements[0].value.trim();
-        emit(state.events.USER_LOGIN, id);
+        var username = event.target.elements[0].value.trim();
+        var saveLocally = event.target.elements[1].checked;
+        emit(state.events.USER_LOGIN, { username: username, saveLocally: saveLocally });
     };
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    return html(_templateObject2, errorMsg, onSubmit, messages.login.userId, messages.login.userIdPlaceholder, messages.login.login);
+    var saveLocally = state.user.saveLocally;
+    var labelStyle = "display:block;";
+    return html(_templateObject2, errorMsg, onSubmit, labelStyle, messages.userId, messages.userIdPlaceholder, labelStyle, messages.remember, saveLocally, messages.login);
 };
 
 module.exports = loginView;
