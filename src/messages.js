@@ -2,7 +2,7 @@ module.exports = {
     embed: {
         default: {
             title: "Page not found",
-            description: "maybe you forgot to include the goup ID"
+            description: "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
             call: "Call"

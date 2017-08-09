@@ -4,6 +4,10 @@ const html = require("choo/html");
 const messages = require("../messages");
 
 const loginView: ChooView = (state, emit) => {
+    if (state.params.room) {
+        const room = JSON.parse(state.params.room);
+        emit(state.events.CHAT_ROOM_UPDATE, room);
+    }
     const onSubmit = event => {
         event.preventDefault();
         const id = event.target.elements[0].value.trim();

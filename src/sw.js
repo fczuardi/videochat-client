@@ -10,6 +10,8 @@ self.addEventListener("push", onPush);
 var onNotificationClick = function(event) {
     var room = event.notification.data;
     console.log({ room });
+    var encodedRoom = JSON.stringify(room)
+    clients.openWindow('./#login/' + encodedRoom);
 };
 self.addEventListener("notificationclick", onNotificationClick);
 

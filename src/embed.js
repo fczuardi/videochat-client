@@ -18,7 +18,7 @@ app.use(apiReducer);
 app.use(errorReducer);
 app.use(chatReducer);
 app.route("*", defaultView);
-app.route("*#group/:groupId", embedView);
+app.route("#group/:groupId", embedView);
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");

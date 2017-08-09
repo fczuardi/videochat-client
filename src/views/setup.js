@@ -22,7 +22,6 @@ const setupView: ChooView = (state, emit) => {
     return html`
 <div>
     <h2>${messages.setup.title}</h2>
-    <p>${state.notifications.permission}</p>
     <p>${state.notifications.permission !== "denied"
         ? messages.setup.description
         : messages.setup.permissionDenied}</p>

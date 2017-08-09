@@ -24,7 +24,7 @@ const homeView: ChooView = (state, emit) => {
     <div id="publisher"></div>
     <div id="subscriber"></div>
     <form onsubmit=${onSubmit}>
-        <textarea name="ot"></textarea>
+        <textarea name="ot">${JSON.stringify(state.chat.room)}</textarea>
         <input type="submit" />
     </form>
 </div>`;
