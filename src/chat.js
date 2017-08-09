@@ -9,14 +9,17 @@ const chatReducer: ChooMiddleware = (state, emitter) => {
         publishFirst: false
     };
 
+    emitter.on(state.events.CHAT_ROOM_UPDATE, (room) => {
+        state.chat.room = room;
+    });
+
     emitter.on(state.events.CHAT_INIT, ({ room, publishFirst }) => {
         state.chat.room = room;
-        state.publishFirst = publishFirst;
+        state.chat.publishFirst = publishFirst;
         opentok(state, emitter);
     });
 
-    emitter.on(state.events.CHAT_ROOM_UPDATE, status => {
-        console.log("Room update", status, state.chat.publishFirst);
+    emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, status => {
         if (status !== "waiting" || state.chat.publishFirst) {
             return null;
         }

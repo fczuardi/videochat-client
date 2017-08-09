@@ -13,7 +13,7 @@ const initializeSession: InitializeSession = (state, emitter) => {
             alert(error.message);
         }
         if (status) {
-            emitter.emit(state.events.CHAT_ROOM_UPDATE, status);
+            emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, status);
         }
     };
     const session = OT.initSession(apiKey, sessionId);

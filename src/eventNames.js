@@ -14,8 +14,9 @@ const eventNames = {
     API_USER_UPDATE: "api:updateUser",
     API_NOTIFYGROUP: "api:notifyGroup",
 
+    CHAT_ROOM_UPDATE: "chat:update",
     CHAT_INIT: "chat:init",
-    CHAT_ROOM_UPDATE: "chat:room:update",
+    CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
     USER_UPDATED: "user:updated"

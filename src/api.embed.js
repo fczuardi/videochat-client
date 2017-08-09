@@ -15,14 +15,14 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
                 token
             }
         }`;
-        emitter.emit(state.events.CHAT_ROOM_UPDATE, "requesting");
+        emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "requesting");
         return apiCall({ query }, (err, resp, body) => {
             if (err || !body.data.room) {
                 if (err) {
                     emitter.emit(state.events.ERROR_API, err);
                 }
                 return emitter.emit(
-                    state.events.CHAT_ROOM_UPDATE,
+                    state.events.CHAT_ROOMSTATUS_UPDATE,
                     "disconnected"
                 );
             }
@@ -49,7 +49,7 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             if (err) {
                 emitter.emit(state.events.ERROR_API, err);
                 return emitter.emit(
-                    state.events.CHAT_ROOM_UPDATE,
+                    state.events.CHAT_ROOMSTATUS_UPDATE,
                     "disconnected"
                 );
             }
