@@ -21,6 +21,7 @@ const eventNames = {
     CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
+    USER_LOGOUT: "user:logout",
     USER_UPDATED: "user:updated"
 };
 

@@ -2,33 +2,24 @@
 import type { ChooView } from "../../app";
 
 const html = require("choo/html");
-const messages = require("../../messages");
+const messages = require("../../messages").app.home;
 const styles = require("../../styles");
 
 const homeView: ChooView = (state, emit) => {
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}</p>`
         : "";
-    const publishFirst = true;
-    const onSubmit = event => {
-        event.preventDefault();
-        const room = JSON.parse(event.target.elements[0].value);
-        emit(state.events.CHAT_INIT, { room, publishFirst });
-    };
     const onLoad = event => {
         const room = state.chat.room;
+        const publishFirst = true;
         if (!room) {
             return null;
         }
         emit(state.events.CHAT_INIT, { room, publishFirst });
     };
-    const manualRoomForm = state.chat.room
-        ? state.chat.roomStatus
-        : html`
-        <form onsubmit=${onSubmit}>
-            <textarea name="ot">${JSON.stringify(state.chat.room)}</textarea>
-            <input type="submit" />
-        </form>`;
+    const onLogoutClick = event => {
+        emit(state.events.USER_LOGOUT);
+    };
     const videochat = html`
         <div id="videos" style=${styles.videoContainer}>
             <div id="publisher" style=${styles.publisherDiv}></div>
@@ -40,11 +31,13 @@ const homeView: ChooView = (state, emit) => {
 <div>
     <div>
         ${errorMsg}
-        <dt>${messages.home.user}</dt>
-        <dd>${state.user.name} (${state.user.email})</dd>
+        <div>
+            <dt>${messages.user}</dt>
+            <dd>${state.user.name} (${state.user.email})</dd>
+        </div>
+        <button onclick=${onLogoutClick}>${messages.logout}</button>
     </div>
     ${videochat}
-    ${manualRoomForm}
 </div>`;
 };
 

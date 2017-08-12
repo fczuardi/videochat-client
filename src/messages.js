@@ -15,6 +15,10 @@ module.exports = {
             userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
             login: "Login",
             remember: "Remember login"
+        },
+        home: {
+            user: "User",
+            logout: "Logout"
         }
     },
     setup: {
@@ -25,7 +29,6 @@ module.exports = {
         tryAgain: "Try Again"
     },
     home: {
-        user: "User"
     },
     loading: "please wait...",
     form: {
