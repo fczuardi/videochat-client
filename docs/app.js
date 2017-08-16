@@ -533,7 +533,8 @@ var homeView = function (state, emit) {
 
 module.exports = homeView;
 },{"../../messages":5,"../../styles":14,"choo/html":undefined}],17:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"], ["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div class=", ">\n    <input\n        class=", "\n        id=\"userId\"\n    />\n    <label\n        class=", "\n        for=\"userId\"\n    >\n        ", "\n    </label>\n</div>\n    "], ["\n<div class=", ">\n    <input\n        class=", "\n        id=\"userId\"\n    />\n    <label\n        class=", "\n        for=\"userId\"\n    >\n        ", "\n    </label>\n</div>\n    "]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        ", "\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"], ["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        ", "\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -555,8 +556,10 @@ var loginView = function (state, emit) {
         textfieldLabel: "mdl-textfield__label",
         submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
     };
+    var textfield = html(_templateObject, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId);
+    window.componentHandler.upgradeElement(textfield);
     var saveLocally = state.user.saveLocally;
-    return html(_templateObject, messages.heading, onSubmit, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId, messages.login, classNames.submit);
+    return html(_templateObject2, messages.heading, onSubmit, textfield, messages.login, classNames.submit);
 };
 
 module.exports = loginView;

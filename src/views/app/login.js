@@ -17,6 +17,21 @@ const loginView: ChooView = (state, emit) => {
         textfieldLabel: "mdl-textfield__label",
         submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
     };
+    const textfield = html`
+<div class=${classNames.textfield}>
+    <input
+        class=${classNames.textfieldInput}
+        id="userId"
+    />
+    <label
+        class=${classNames.textfieldLabel}
+        for="userId"
+    >
+        ${messages.userId}
+    </label>
+</div>
+    `;
+    window.componentHandler.upgradeElement(textfield);
     const saveLocally = state.user.saveLocally;
     return html`
 <div>
@@ -26,18 +41,7 @@ const loginView: ChooView = (state, emit) => {
     <form
         onsubmit=${onSubmit}
     >
-        <div class=${classNames.textfield}>
-            <input
-                class=${classNames.textfieldInput}
-                id="userId"
-            />
-            <label
-                class=${classNames.textfieldLabel}
-                for="userId"
-            >
-                ${messages.userId}
-            </label>
-        </div>
+        ${textfield}
         <input
             type="submit"
             value=${messages.login}
