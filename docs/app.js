@@ -20,6 +20,7 @@ var setupView = require("./views/app/setup");
 var loginView = require("./views/app/login");
 var homeView = require("./views/app/home");
 var errorReducer = require("./reducers/error");
+var mdlReducer = require("./reducers/app/mdl");
 var chatReducer = require("./reducers/chat");
 var setupReducer = require("./reducers/app/setup");
 var serviceWorkerReducer = require("./reducers/app/serviceWorker");
@@ -70,6 +71,7 @@ app.use(setupReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
 app.use(chatReducer);
+app.use(mdlReducer);
 app.route("/videochat-client/app.html/login/:room", mainView);
 app.route("/videochat-client/app.html/login", mainView);
 app.route("/login/:room", mainView);
@@ -87,7 +89,7 @@ if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
 document.body.appendChild(rootContainer);
-},{"./eventNames":4,"./reducers/app/api":8,"./reducers/app/serviceWorker":9,"./reducers/app/setup":10,"./reducers/app/user":11,"./reducers/chat":12,"./reducers/error":13,"./views/app/home":16,"./views/app/login":17,"./views/app/setup":18,"choo":undefined,"choo/html":undefined}],3:[function(require,module,exports){
+},{"./eventNames":4,"./reducers/app/api":8,"./reducers/app/mdl":9,"./reducers/app/serviceWorker":10,"./reducers/app/setup":11,"./reducers/app/user":12,"./reducers/chat":13,"./reducers/error":14,"./views/app/home":17,"./views/app/login":18,"./views/app/setup":19,"choo":undefined,"choo/html":undefined}],3:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
 },{"../config.toml":1}],4:[function(require,module,exports){
@@ -286,6 +288,21 @@ module.exports = apiReducers;
 //      
 
 
+var mdlReducer = function (state, emitter) {
+    emitter.on(state.events.RENDER, function () {
+        if (window.componentHandler) {
+            window.setTimeout(function () {
+                window.componentHandler.upgradeDom();
+            }, 0);
+        }
+    });
+};
+
+module.exports = mdlReducer;
+},{}],10:[function(require,module,exports){
+//      
+
+
 var toUint8Array = require("../../urlBase64ToUint8Array");
 
 var workerFilePath = "./sw.js";
@@ -342,7 +359,7 @@ var worker = function (state, emitter) {
 };
 
 module.exports = worker;
-},{"../../urlBase64ToUint8Array":15}],10:[function(require,module,exports){
+},{"../../urlBase64ToUint8Array":16}],11:[function(require,module,exports){
 //      
 
 
@@ -357,7 +374,7 @@ var setup = function (state, emitter) {
 };
 
 module.exports = setup;
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 //      
 
 
@@ -395,7 +412,7 @@ var userReducer = function (state, emitter) {
 };
 
 module.exports = userReducer;
-},{"xtend":undefined}],12:[function(require,module,exports){
+},{"xtend":undefined}],13:[function(require,module,exports){
 //      
 
 
@@ -438,7 +455,7 @@ var chatReducer = function (state, emitter) {
 };
 
 module.exports = chatReducer;
-},{"../opentok":7}],13:[function(require,module,exports){
+},{"../opentok":7}],14:[function(require,module,exports){
 //      
 
 
@@ -463,6 +480,7 @@ var errorReducer = function (snackbar) {
         emitter.on(ERROR_API, function (err) {
             console.error(err);
             state.errors.api = err;
+            emitter.emit(state.events.RENDER);
             if (!snackbar || !snackbar.MaterialSnackbar) {
                 return null;
             }
@@ -474,14 +492,14 @@ var errorReducer = function (snackbar) {
 };
 
 module.exports = errorReducer;
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 //      
 module.exports = {
     videoContainer: "\nposition: relative;\nmax-width: 405px;\nmargin: auto;\nheight: 240px; \n    ",
     publisherDiv: "\nposition: absolute;\nz-index: 2;\nbottom: 0;\nright: 0;\noverflow:hidden;\nborder-radius: 100px;\n    ",
     subscriberDiv: "\noverflow: hidden;\nheight: 100%;\nborder-radius: 10px;\n    "
 };
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // from https://github.com/web-push-libs/web-push
 function urlBase64ToUint8Array(base64String) {
     var padding = "=".repeat((4 - base64String.length % 4) % 4);
@@ -496,7 +514,7 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 module.exports = urlBase64ToUint8Array;
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
     _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <div>\n            <dt>", "</dt>\n            <dd>", " (", ")</dd>\n        </div>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <div>\n            <dt>", "</dt>\n            <dd>", " (", ")</dd>\n        </div>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
@@ -532,9 +550,8 @@ var homeView = function (state, emit) {
 };
 
 module.exports = homeView;
-},{"../../messages":5,"../../styles":14,"choo/html":undefined}],17:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["\n<div class=", ">\n    <input\n        class=", "\n        id=\"userId\"\n    />\n    <label\n        class=", "\n        for=\"userId\"\n    >\n        ", "\n    </label>\n</div>\n    "], ["\n<div class=", ">\n    <input\n        class=", "\n        id=\"userId\"\n    />\n    <label\n        class=", "\n        for=\"userId\"\n    >\n        ", "\n    </label>\n</div>\n    "]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        ", "\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"], ["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        ", "\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"]);
+},{"../../messages":5,"../../styles":15,"choo/html":undefined}],18:[function(require,module,exports){
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <button\n            type=\"submit\"\n            class=", "\n        >", "</button>\n    </form>\n</div>"], ["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <button\n            type=\"submit\"\n            class=", "\n        >", "</button>\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -554,16 +571,13 @@ var loginView = function (state, emit) {
         textfield: "mdl-textfield mdl-js-textfield mdl-textfield--floating-label",
         textfieldInput: "mdl-textfield__input",
         textfieldLabel: "mdl-textfield__label",
-        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect"
+        submit: "mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--accent"
     };
-    var textfield = html(_templateObject, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId);
-    window.componentHandler.upgradeElement(textfield);
-    var saveLocally = state.user.saveLocally;
-    return html(_templateObject2, messages.heading, onSubmit, textfield, messages.login, classNames.submit);
+    return html(_templateObject, messages.heading, onSubmit, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId, classNames.submit, messages.login);
 };
 
 module.exports = loginView;
-},{"../../messages":5,"choo/html":undefined}],18:[function(require,module,exports){
+},{"../../messages":5,"choo/html":undefined}],19:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"], ["\n<div>\n    <h2>", "</h2>\n    <p>", "</p>\n    <button onclick=", " >\n        ", "\n    </button>\n</div>\n"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }

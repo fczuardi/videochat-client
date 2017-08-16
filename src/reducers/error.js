@@ -22,6 +22,7 @@ const errorReducer: ErrorReducer = snackbar => (state, emitter) => {
     emitter.on(ERROR_API, err => {
         console.error(err);
         state.errors.api = err;
+        emitter.emit(state.events.RENDER);
         if (!snackbar || !snackbar.MaterialSnackbar) {
             return null;
         }
