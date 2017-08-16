@@ -463,7 +463,7 @@ var errorReducer = function (snackbar) {
         emitter.on(ERROR_API, function (err) {
             console.error(err);
             state.errors.api = err;
-            if (!snackbar) {
+            if (!snackbar || !snackbar.MaterialSnackbar) {
                 return null;
             }
             snackbar.MaterialSnackbar.showSnackbar({
