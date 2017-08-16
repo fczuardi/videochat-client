@@ -15,7 +15,7 @@ const loginView: ChooView = (state, emit) => {
             "mdl-textfield mdl-js-textfield mdl-textfield--floating-label",
         textfieldInput: "mdl-textfield__input",
         textfieldLabel: "mdl-textfield__label",
-        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect"
     };
     const textfield = html`
 <div class=${classNames.textfield}>

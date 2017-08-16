@@ -554,7 +554,7 @@ var loginView = function (state, emit) {
         textfield: "mdl-textfield mdl-js-textfield mdl-textfield--floating-label",
         textfieldInput: "mdl-textfield__input",
         textfieldLabel: "mdl-textfield__label",
-        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent mdl-js-ripple-effect"
     };
     var textfield = html(_templateObject, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId);
     window.componentHandler.upgradeElement(textfield);
