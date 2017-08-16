@@ -1,8 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports = { "app": { "html": { "title": "App page title", "themeColor": "#FFFFFF" } }, "api": { "url": "https://qt5owt5-videochatapi.wedeploy.io/api" }, "opentok": { "publisherProperties": { "width": 100, "height": 100 }, "subscriberProperties": { "width": "100%", "height": "100%" } } };
 },{}],2:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["<div>404 \"", "\"</div>"], ["<div>404 \"", "\"</div>"]),
-    _templateObject2 = _taggedTemplateLiteral(["<div>Loading...</div>"], ["<div>Loading...</div>"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <link\n        rel=\"stylesheet\"\n        href=\"https://code.getmdl.io/1.3.0/material.blue_grey-indigo.min.css\">\n    <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\">\n    <script defer src=\"https://code.getmdl.io/1.3.0/material.min.js\"></script>\n</div>\n"], ["\n<div>\n    <link\n        rel=\"stylesheet\"\n        href=\"https://code.getmdl.io/1.3.0/material.blue_grey-indigo.min.css\">\n    <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\">\n    <script defer src=\"https://code.getmdl.io/1.3.0/material.min.js\"></script>\n</div>\n"]),
+    _templateObject2 = _taggedTemplateLiteral(["\n<div class=\"mdl-snackbar mdl-js-snackbar\">\n    <div class=\"mdl-snackbar__text\"></div>\n    <button type=\"button\" class=\"mdl-snackbar__action\"></button>\n</div>\n"], ["\n<div class=\"mdl-snackbar mdl-js-snackbar\">\n    <div class=\"mdl-snackbar__text\"></div>\n    <button type=\"button\" class=\"mdl-snackbar__action\"></button>\n</div>\n"]),
+    _templateObject3 = _taggedTemplateLiteral(["\n<div class=\"mdl-layout mdl-js-layout\">\n    <main class=\"mdl-layout__content\">\n        <div class=\"mdl-grid\">\n            <div class=\"mdl-cell mdl-cell--hide-phone mdl-cell--2-col-tablet mdl-cell--4-col \"></div>\n            <div class=\"mdl-cell mdl-cell--4-col\">\n                <div id=\"root\"></div>\n            </div>\n        </div>\n    </main>\n    ", "\n</div>\n"], ["\n<div class=\"mdl-layout mdl-js-layout\">\n    <main class=\"mdl-layout__content\">\n        <div class=\"mdl-grid\">\n            <div class=\"mdl-cell mdl-cell--hide-phone mdl-cell--2-col-tablet mdl-cell--4-col \"></div>\n            <div class=\"mdl-cell mdl-cell--4-col\">\n                <div id=\"root\"></div>\n            </div>\n        </div>\n    </main>\n    ", "\n</div>\n"]),
+    _templateObject4 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    ", "\n</div>\n"], ["\n<div>\n    ", "\n    ", "\n</div>\n"]),
+    _templateObject5 = _taggedTemplateLiteral(["<div>404 \"", "\"</div>"], ["<div>404 \"", "\"</div>"]),
+    _templateObject6 = _taggedTemplateLiteral(["<div>Loading...</div>"], ["<div>Loading...</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -22,12 +26,19 @@ var serviceWorkerReducer = require("./reducers/app/serviceWorker");
 var apiReducer = require("./reducers/app/api");
 var userReducer = require("./reducers/app/user");
 
+var styleLib = html(_templateObject);
+
+var snackbar = html(_templateObject2);
+
+var viewContainer = html(_templateObject3, snackbar);
+
+var rootContainer = html(_templateObject4, styleLib, viewContainer);
+
 var notFoundView = function (state, emit) {
-    return html(_templateObject, state.route);
+    return html(_templateObject5, state.route);
 };
 
 var mainView = function (state, emit) {
-    console.log(state.route);
     if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }
@@ -43,7 +54,7 @@ var mainView = function (state, emit) {
                 username: localUserId,
                 saveLocally: saveLocally
             });
-            return html(_templateObject2);
+            return html(_templateObject6);
         }
         emit(state.events.PUSHSTATE, "#login");
         return loginView(state, emit);
@@ -54,7 +65,7 @@ var mainView = function (state, emit) {
 
 app.use(eventNames);
 app.use(apiReducer);
-app.use(errorReducer);
+app.use(errorReducer(snackbar));
 app.use(setupReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
@@ -70,11 +81,12 @@ app.route("/home", mainView);
 app.route("/videochat-client/app.html", mainView);
 app.route("/", mainView);
 app.route("*", notFoundView);
+app.mount("#root");
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
-document.body.appendChild(app.start());
+document.body.appendChild(rootContainer);
 },{"./eventNames":4,"./reducers/app/api":8,"./reducers/app/serviceWorker":9,"./reducers/app/setup":10,"./reducers/app/user":11,"./reducers/chat":12,"./reducers/error":13,"./views/app/home":16,"./views/app/login":17,"./views/app/setup":18,"choo":undefined,"choo/html":undefined}],3:[function(require,module,exports){
 var config = require("../config.toml");
 module.exports = config;
@@ -102,6 +114,7 @@ var eventNames = {
     CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
+    USER_LOGOUT: "user:logout",
     USER_UPDATED: "user:updated"
 };
 
@@ -125,10 +138,13 @@ module.exports = {
     },
     app: {
         login: {
-            userId: "Secret",
-            userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
-            login: "Login",
-            remember: "Remember login"
+            heading: "Enter your credentials",
+            userId: "Attendant Number",
+            login: "Next"
+        },
+        home: {
+            user: "User",
+            logout: "Logout"
         }
     },
     setup: {
@@ -138,9 +154,7 @@ module.exports = {
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
     },
-    home: {
-        user: "User"
-    },
+    home: {},
     loading: "please wait...",
     form: {
         name: "Name",
@@ -430,25 +444,33 @@ module.exports = chatReducer;
 
 var ERROR_API = "error:api";
 
-var errorReducer = function (state, emitter) {
-    state.errors = {
-        api: null
+var errorReducer = function (snackbar) {
+    return function (state, emitter) {
+        state.errors = {
+            api: null
+        };
+
+        state.events.ERROR_API = ERROR_API;
+
+        var clearApiError = function () {
+            state.errors.api = null;
+        };
+
+        emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+        emitter.on(state.events.API_ROOM, clearApiError);
+        emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+        emitter.on(ERROR_API, function (err) {
+            console.error(err);
+            state.errors.api = err;
+            if (!snackbar) {
+                return null;
+            }
+            snackbar.MaterialSnackbar.showSnackbar({
+                message: err
+            });
+        });
     };
-
-    state.events.ERROR_API = ERROR_API;
-
-    var clearApiError = function () {
-        state.errors.api = null;
-    };
-
-    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
-    emitter.on(state.events.API_ROOM, clearApiError);
-    emitter.on(state.events.API_USER_UPDATE, clearApiError);
-
-    emitter.on(ERROR_API, function (err) {
-        console.error(err);
-        state.errors.api = err;
-    });
 };
 
 module.exports = errorReducer;
@@ -476,9 +498,8 @@ function urlBase64ToUint8Array(base64String) {
 module.exports = urlBase64ToUint8Array;
 },{}],16:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
-    _templateObject2 = _taggedTemplateLiteral(["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"], ["\n        <form onsubmit=", ">\n            <textarea name=\"ot\">", "</textarea>\n            <input type=\"submit\" />\n        </form>"]),
-    _templateObject3 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
-    _templateObject4 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    ", "\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <dt>", "</dt>\n        <dd>", " (", ")</dd>\n    </div>\n    ", "\n    ", "\n</div>"]);
+    _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
+    _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <div>\n            <dt>", "</dt>\n            <dd>", " (", ")</dd>\n        </div>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <div>\n            <dt>", "</dt>\n            <dd>", " (", ")</dd>\n        </div>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -486,37 +507,33 @@ function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defi
 
 
 var html = require("choo/html");
-var messages = require("../../messages");
+var messages = require("../../messages").app.home;
 var styles = require("../../styles");
 
 var homeView = function (state, emit) {
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
-    var publishFirst = true;
-    var onSubmit = function (event) {
-        event.preventDefault();
-        var room = JSON.parse(event.target.elements[0].value);
-        emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
-    };
     var onLoad = function (event) {
         var room = state.chat.room;
+        var publishFirst = true;
         if (!room) {
             return null;
         }
         emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
     };
-    var manualRoomForm = state.chat.room ? state.chat.roomStatus : html(_templateObject2, onSubmit, JSON.stringify(state.chat.room));
-    var videochat = html(_templateObject3, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
+    var onLogoutClick = function (event) {
+        emit(state.events.USER_LOGOUT);
+    };
+    var videochat = html(_templateObject2, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
     videochat.isSameNode = function (target) {
         return target.id === "videos";
     };
     onLoad();
-    return html(_templateObject4, errorMsg, messages.home.user, state.user.name, state.user.email, videochat, manualRoomForm);
+    return html(_templateObject3, errorMsg, messages.user, state.user.name, state.user.email, onLogoutClick, messages.logout, videochat);
 };
 
 module.exports = homeView;
 },{"../../messages":5,"../../styles":14,"choo/html":undefined}],17:[function(require,module,exports){
-var _templateObject = _taggedTemplateLiteral(["<p>", ""], ["<p>", ""]),
-    _templateObject2 = _taggedTemplateLiteral(["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label style=", ">\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <label style=", ">\n            ", "\n            <input\n                type=\"checkbox\"\n                name=\"saveLocally\"\n                checked=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"], ["\n<div>\n    ", "\n    <form onsubmit=", ">\n        <label style=", ">\n            ", "\n            <input\n                name=\"userId\"\n                placeholder=", "></input>\n        </label>\n        <label style=", ">\n            ", "\n            <input\n                type=\"checkbox\"\n                name=\"saveLocally\"\n                checked=", "></input>\n        </label>\n        <input type=\"submit\" value=", "/>\n    </form>\n</div>"]);
+var _templateObject = _taggedTemplateLiteral(["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"], ["\n<div>\n    <h3>\n        ", "\n    </h3>\n    <form\n        onsubmit=", "\n    >\n        <div class=", ">\n            <input\n                class=", "\n                id=\"userId\"\n            />\n            <label\n                class=", "\n                for=\"userId\"\n            >\n                ", "\n            </label>\n        </div>\n        <input\n            type=\"submit\"\n            value=", "\n            class=", "\n        />\n    </form>\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -529,13 +546,17 @@ var loginView = function (state, emit) {
     var onSubmit = function (event) {
         event.preventDefault();
         var username = event.target.elements[0].value.trim();
-        var saveLocally = event.target.elements[1].checked;
+        var saveLocally = true;
         emit(state.events.USER_LOGIN, { username: username, saveLocally: saveLocally });
     };
-    var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
+    var classNames = {
+        textfield: "mdl-textfield mdl-js-textfield mdl-textfield--floating-label",
+        textfieldInput: "mdl-textfield__input",
+        textfieldLabel: "mdl-textfield__label",
+        submit: "mdl-button mdl-js-button mdl-button--raised mdl-button--accent"
+    };
     var saveLocally = state.user.saveLocally;
-    var labelStyle = "display:block;";
-    return html(_templateObject2, errorMsg, onSubmit, labelStyle, messages.userId, messages.userIdPlaceholder, labelStyle, messages.remember, saveLocally, messages.login);
+    return html(_templateObject, messages.heading, onSubmit, classNames.textfield, classNames.textfieldInput, classNames.textfieldLabel, messages.userId, messages.login, classNames.submit);
 };
 
 module.exports = loginView;

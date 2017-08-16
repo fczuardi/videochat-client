@@ -3,7 +3,8 @@ import type { ChooMiddleware } from "../app";
 
 const ERROR_API = "error:api";
 
-const errorReducer: ChooMiddleware = (state, emitter) => {
+type ErrorReducer = (snackbar: Object | void) => ChooMiddleware;
+const errorReducer: ErrorReducer = snackbar => (state, emitter) => {
     state.errors = {
         api: null
     };
@@ -21,6 +22,12 @@ const errorReducer: ChooMiddleware = (state, emitter) => {
     emitter.on(ERROR_API, err => {
         console.error(err);
         state.errors.api = err;
+        if (!snackbar) {
+            return null;
+        }
+        snackbar.MaterialSnackbar.showSnackbar({
+            message: err
+        });
     });
 };
 

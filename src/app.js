@@ -15,12 +15,49 @@ const serviceWorkerReducer = require("./reducers/app/serviceWorker");
 const apiReducer = require("./reducers/app/api");
 const userReducer = require("./reducers/app/user");
 
+const styleLib = html`
+<div>
+    <link
+        rel="stylesheet"
+        href="https://code.getmdl.io/1.3.0/material.blue_grey-indigo.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+</div>
+`;
+
+const snackbar = html`
+<div class="mdl-snackbar mdl-js-snackbar">
+    <div class="mdl-snackbar__text"></div>
+    <button type="button" class="mdl-snackbar__action"></button>
+</div>
+`;
+
+const viewContainer = html`
+<div class="mdl-layout mdl-js-layout">
+    <main class="mdl-layout__content">
+        <div class="mdl-grid">
+            <div class="mdl-cell mdl-cell--hide-phone mdl-cell--2-col-tablet mdl-cell--4-col "></div>
+            <div class="mdl-cell mdl-cell--4-col">
+                <div id="root"></div>
+            </div>
+        </div>
+    </main>
+    ${snackbar}
+</div>
+`;
+
+const rootContainer = html`
+<div>
+    ${styleLib}
+    ${viewContainer}
+</div>
+`;
+
 const notFoundView: ChooView = (state, emit) => {
     return html`<div>404 "${state.route}"</div>`;
 };
 
 const mainView = (state, emit) => {
-    console.log(state.route);
     if (state.setup.permission !== "granted") {
         return setupView(state, emit);
     }
@@ -48,7 +85,7 @@ const mainView = (state, emit) => {
 
 app.use(eventNames);
 app.use(apiReducer);
-app.use(errorReducer);
+app.use(errorReducer(snackbar));
 app.use(setupReducer);
 app.use(serviceWorkerReducer);
 app.use(userReducer);
@@ -64,8 +101,9 @@ app.route("/home", mainView);
 app.route("/videochat-client/app.html", mainView);
 app.route("/", mainView);
 app.route("*", notFoundView);
+app.mount("#root");
 
 if (typeof document === "undefined" || !document.body) {
     throw new Error("document.body is not here");
 }
-document.body.appendChild(app.start());
+document.body.appendChild(rootContainer);

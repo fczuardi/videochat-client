@@ -57269,6 +57269,7 @@ function Choo (opts) {
   this._hrefEnabled = opts.href === undefined ? true : opts.href
   this._hasWindow = typeof window !== 'undefined'
   this._createLocation = nanolocation
+  this._loaded = false
   this._tree = null
 
   // properties that are part of the API
@@ -57317,9 +57318,11 @@ Choo.prototype.start = function () {
   var self = this
   if (this._historyEnabled) {
     this.emitter.prependListener(this._events.NAVIGATE, function () {
-      self.emitter.emit(self._events.RENDER)
       self.state.query = nanoquery(window.location.search)
-      setTimeout(scrollToAnchor.bind(null, window.location.hash), 0)
+      if (self._loaded) {
+        self.emitter.emit(self._events.RENDER)
+        setTimeout(scrollToAnchor.bind(null, window.location.hash), 0)
+      }
     })
 
     this.emitter.prependListener(this._events.POPSTATE, function () {
@@ -57377,6 +57380,7 @@ Choo.prototype.start = function () {
 
   documentReady(function () {
     self.emitter.emit(self._events.DOMCONTENTLOADED)
+    self._loaded = true
   })
 
   return this._tree

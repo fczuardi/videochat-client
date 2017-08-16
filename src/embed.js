@@ -13,7 +13,7 @@ const apiReducer = require("./reducers/embed/api");
 
 app.use(eventNames);
 app.use(apiReducer);
-app.use(errorReducer);
+app.use(errorReducer());
 app.use(chatReducer);
 app.route("/videochat-client/embed.html/group/:groupId", embedView);
 app.route("/group/:groupId", embedView);

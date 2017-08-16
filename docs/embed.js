@@ -18,7 +18,7 @@ var apiReducer = require("./reducers/embed/api");
 
 app.use(eventNames);
 app.use(apiReducer);
-app.use(errorReducer);
+app.use(errorReducer());
 app.use(chatReducer);
 app.route("/videochat-client/embed.html/group/:groupId", embedView);
 app.route("/group/:groupId", embedView);
@@ -52,6 +52,7 @@ var eventNames = {
     CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
     USER_LOGIN: "user:login",
+    USER_LOGOUT: "user:logout",
     USER_UPDATED: "user:updated"
 };
 
@@ -75,10 +76,13 @@ module.exports = {
     },
     app: {
         login: {
-            userId: "Secret",
-            userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
-            login: "Login",
-            remember: "Remember login"
+            heading: "Enter your credentials",
+            userId: "Attendant Number",
+            login: "Next"
+        },
+        home: {
+            user: "User",
+            logout: "Logout"
         }
     },
     setup: {
@@ -88,9 +92,7 @@ module.exports = {
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
     },
-    home: {
-        user: "User"
-    },
+    home: {},
     loading: "please wait...",
     form: {
         name: "Name",
@@ -277,25 +279,33 @@ module.exports = apiReducers;
 
 var ERROR_API = "error:api";
 
-var errorReducer = function (state, emitter) {
-    state.errors = {
-        api: null
+var errorReducer = function (snackbar) {
+    return function (state, emitter) {
+        state.errors = {
+            api: null
+        };
+
+        state.events.ERROR_API = ERROR_API;
+
+        var clearApiError = function () {
+            state.errors.api = null;
+        };
+
+        emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
+        emitter.on(state.events.API_ROOM, clearApiError);
+        emitter.on(state.events.API_USER_UPDATE, clearApiError);
+
+        emitter.on(ERROR_API, function (err) {
+            console.error(err);
+            state.errors.api = err;
+            if (!snackbar) {
+                return null;
+            }
+            snackbar.MaterialSnackbar.showSnackbar({
+                message: err
+            });
+        });
     };
-
-    state.events.ERROR_API = ERROR_API;
-
-    var clearApiError = function () {
-        state.errors.api = null;
-    };
-
-    emitter.on(state.events.API_PUSHSERVER_PUBKEY, clearApiError);
-    emitter.on(state.events.API_ROOM, clearApiError);
-    emitter.on(state.events.API_USER_UPDATE, clearApiError);
-
-    emitter.on(ERROR_API, function (err) {
-        console.error(err);
-        state.errors.api = err;
-    });
 };
 
 module.exports = errorReducer;

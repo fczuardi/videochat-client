@@ -11,10 +11,9 @@ module.exports = {
     },
     app: {
         login: {
-            userId: "Secret",
-            userIdPlaceholder: "3c3fc788-2e41-4abb-9153-8a3f01d49990",
-            login: "Login",
-            remember: "Remember login"
+            heading: "Enter your credentials",
+            userId: "Attendant Number",
+            login: "Next"
         },
         home: {
             user: "User",
@@ -28,8 +27,7 @@ module.exports = {
         permissionDenied: "You have denied the permission.",
         tryAgain: "Try Again"
     },
-    home: {
-    },
+    home: {},
     loading: "please wait...",
     form: {
         name: "Name",
