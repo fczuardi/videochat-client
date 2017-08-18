@@ -9,7 +9,8 @@ self.addEventListener("push", onPush);
 var onNotificationClick = function(event) {
     var room = event.notification.data;
     var encodedRoom = JSON.stringify(room);
-    clients.openWindow("./app.html#login/" + encodedRoom);
+    var baseUrl = self.registration.scope || './app.html';
+    clients.openWindow(baseUrl + "#login/" + encodedRoom);
 };
 self.addEventListener("notificationclick", onNotificationClick);
 

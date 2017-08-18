@@ -31,6 +31,7 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
             return emitter.emit(state.events.CHAT_INIT, { room, publishFirst });
         });
     });
+
     emitter.on(state.events.API_NOTIFYGROUP, ({ groupId, room }) => {
         const query = `
         mutation($groupId:ID!, $payload:String){
@@ -40,6 +41,8 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
         const payload = JSON.stringify({
             title: "Support call",
             options: {
+                tag: room.sessionId,
+                requireInteraction: true,
                 body: `From group ${groupId}`,
                 data: room
             }

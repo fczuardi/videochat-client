@@ -248,6 +248,7 @@ var apiReducers = function (state, emitter) {
             return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
         });
     });
+
     emitter.on(state.events.API_NOTIFYGROUP, function (_ref) {
         var groupId = _ref.groupId,
             room = _ref.room;
@@ -257,6 +258,8 @@ var apiReducers = function (state, emitter) {
         var payload = JSON.stringify({
             title: "Support call",
             options: {
+                tag: room.sessionId,
+                requireInteraction: true,
                 body: "From group " + groupId,
                 data: room
             }

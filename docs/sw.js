@@ -1,5 +1,4 @@
 var onPush = function(pushEvent) {
-    console.log(pushEvent.data.text());
     var data = pushEvent.data.json();
     pushEvent.waitUntil(
         self.registration.showNotification(data.title, data.options)
@@ -9,9 +8,9 @@ self.addEventListener("push", onPush);
 
 var onNotificationClick = function(event) {
     var room = event.notification.data;
-    console.log({ room });
     var encodedRoom = JSON.stringify(room);
-    clients.openWindow("./app.html#login/" + encodedRoom);
+    var baseUrl = self.registration.scope || './app.html';
+    clients.openWindow(baseUrl + "#login/" + encodedRoom);
 };
 self.addEventListener("notificationclick", onNotificationClick);
 
