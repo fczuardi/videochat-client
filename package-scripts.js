@@ -29,9 +29,13 @@ const embedArgs = [
     ...transforms
 ];
 
-const appHtmlArgs = Object.keys(config.app.html).map(
+const timestamp = Date.now();
+
+const configAppHtmlArgs = Object.keys(config.app.html).map(
     k => `--data-${k}="${config.app.html[k]}"`
 );
+
+const appHtmlArgs = configAppHtmlArgs.concat([`--data-timestamp=${timestamp}`])
 
 module.exports = {
     scripts: {
