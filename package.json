@@ -34,7 +34,7 @@
     "nps": "^5.7.0",
     "nps-utils": "^1.3.0",
     "prettier": "^1.5.3",
-    "snyk": "^1.38.3",
+    "snyk": "^1.40.0",
     "toml-require": "^1.1.0",
     "tomlify": "git+https://github.com/BinaryMuse/tomlify.git",
     "unflowify": "^1.0.1",
