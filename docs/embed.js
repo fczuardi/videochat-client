@@ -48,6 +48,7 @@ var eventNames = {
     API_NOTIFYGROUP: "api:notifyGroup",
 
     CHAT_ROOM_UPDATE: "chat:update",
+    CHAT_SETTINGS_UPDATE: "chat:config:update",
     CHAT_INIT: "chat:init",
     CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
@@ -71,7 +72,10 @@ module.exports = {
             description: "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
-            call: "Call"
+            description: "If you don't want to turn your camera on, or if you don't have a camera, choose Voice Call",
+            voiceCall: "Voice Call",
+            videoCall: "Video Call",
+            hangup: "Close Chat"
         }
     },
     app: {
@@ -151,10 +155,11 @@ var initializeSession = function (state, emitter) {
 
     var initPublisher = function () {
         var name = state.user && state.user.name || "";
+        var videoSource = state.chat.settings.voiceOnly === true ? { videoSource: null } : {};
         var pubOptions = extend(config.opentok.publisherProperties, {
             insertMode: "append",
             name: name
-        });
+        }, videoSource);
         return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
 
@@ -162,12 +167,12 @@ var initializeSession = function (state, emitter) {
         if (error) {
             handleResponse()(error);
         } else {
-            if (state.chat.publishFirst) {
+            if (state.chat.settings.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             session.on("streamCreated", function (event) {
-                if (!state.chat.publishFirst) {
+                if (!state.chat.settings.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 var subOptions = extend(config.opentok.subscriberProperties, {
@@ -184,15 +189,22 @@ module.exports = initializeSession;
 //      
 
 
+var extend = require("xtend");
 var opentok = require("../opentok");
 
 var chatReducer = function (state, emitter) {
     state.chat = {
         room: null,
         roomSatus: "disconnected",
-        publishFirst: false
+        settings: {
+            voiceOnly: false,
+            publishFirst: false
+        }
     };
 
+    emitter.on(state.events.CHAT_SETTINGS_UPDATE, function (update) {
+        state.chat.settings = extend(state.chat.settings, update);
+    });
     emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
         state.chat.roomStatus = newStatus;
         return emitter.emit(state.events.RENDER);
@@ -203,11 +215,9 @@ var chatReducer = function (state, emitter) {
     });
 
     emitter.on(state.events.CHAT_INIT, function (_ref) {
-        var room = _ref.room,
-            publishFirst = _ref.publishFirst;
+        var room = _ref.room;
 
         state.chat.room = room;
-        state.chat.publishFirst = publishFirst;
         opentok(state, emitter);
     });
 
@@ -223,7 +233,7 @@ var chatReducer = function (state, emitter) {
 };
 
 module.exports = chatReducer;
-},{"../opentok":7}],9:[function(require,module,exports){
+},{"../opentok":7,"xtend":undefined}],9:[function(require,module,exports){
 //      
 
 
@@ -244,8 +254,7 @@ var apiReducers = function (state, emitter) {
                 return emitter.emit(state.events.CHAT_ROOMSTATUS_UPDATE, "disconnected");
             }
             var room = body.data.room;
-            var publishFirst = false;
-            return emitter.emit(state.events.CHAT_INIT, { room: room, publishFirst: publishFirst });
+            return emitter.emit(state.events.CHAT_INIT, { room: room });
         });
     });
 
@@ -338,7 +347,9 @@ module.exports = defaultView;
 },{"../../messages":5,"choo/html":undefined}],13:[function(require,module,exports){
 var _templateObject = _taggedTemplateLiteral(["<p>", "</p>"], ["<p>", "</p>"]),
     _templateObject2 = _taggedTemplateLiteral(["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"], ["\n        <div id=\"videos\" style=", ">\n            <div id=\"publisher\" style=", "></div>\n            <div id=\"subscriber\" style=", "></div>\n        </div>"]),
-    _templateObject3 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        <p>", "</p>\n        <button onclick=", ">", "</button>\n    </div>\n    ", "\n</div>"]);
+    _templateObject3 = _taggedTemplateLiteral(["\n        <div>\n            <p>", "</p>\n            <button onclick=", ">", "</button>\n            <button onclick=", ">", "</button>\n        </div>\n        "], ["\n        <div>\n            <p>", "</p>\n            <button onclick=", ">", "</button>\n            <button onclick=", ">", "</button>\n        </div>\n        "]),
+    _templateObject4 = _taggedTemplateLiteral(["\n        <div>\n            <p>", "</p>\n            <button onclick=", ">", "</button>\n        </div>\n        "], ["\n        <div>\n            <p>", "</p>\n            <button onclick=", ">", "</button>\n        </div>\n        "]),
+    _templateObject5 = _taggedTemplateLiteral(["\n<div>\n    <div>\n        ", "\n        ", "\n    </div>\n    ", "\n</div>"], ["\n<div>\n    <div>\n        ", "\n        ", "\n    </div>\n    ", "\n</div>"]);
 
 function _taggedTemplateLiteral(strings, raw) { return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
@@ -350,15 +361,23 @@ var messages = require("../../messages").embed.home;
 var styles = require("../../styles");
 
 var homeView = function (state, emit) {
-    var requestRoom = function (event) {
-        emit(state.events.API_ROOM);
+    var requestRoom = function (voiceOnly) {
+        return function (event) {
+            var publishFirst = true;
+            emit(state.events.CHAT_SETTINGS_UPDATE, { voiceOnly: voiceOnly, publishFirst: publishFirst });
+            emit(state.events.API_ROOM);
+        };
+    };
+    var closeChat = function (event) {
+        console.log("TBD Close Chat");
     };
     var errorMsg = state.errors.api ? html(_templateObject, state.errors.api.message) : "";
     var videochat = html(_templateObject2, styles.videoContainer, styles.publisherDiv, styles.subscriberDiv);
     videochat.isSameNode = function (target) {
         return target.id === "videos";
     };
-    return html(_templateObject3, errorMsg, state.chat.roomStatus, requestRoom, messages.call, videochat);
+    var buttons = !state.chat.room || !state.chat.room.sessionId ? html(_templateObject3, messages.description, requestRoom(true), messages.voiceCall, requestRoom(false), messages.videoCall) : html(_templateObject4, state.chat.roomStatus, closeChat, messages.hangup);
+    return html(_templateObject5, errorMsg, buttons, videochat);
 };
 
 module.exports = homeView;

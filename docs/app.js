@@ -112,6 +112,7 @@ var eventNames = {
     API_NOTIFYGROUP: "api:notifyGroup",
 
     CHAT_ROOM_UPDATE: "chat:update",
+    CHAT_SETTINGS_UPDATE: "chat:config:update",
     CHAT_INIT: "chat:init",
     CHAT_ROOMSTATUS_UPDATE: "chat:roomstatus:update",
 
@@ -135,7 +136,10 @@ module.exports = {
             description: "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
-            call: "Call"
+            description: "If you don't want to turn your camera on, or if you don't have a camera, choose Voice Call",
+            voiceCall: "Voice Call",
+            videoCall: "Video Call",
+            hangup: "Close Chat"
         }
     },
     app: {
@@ -215,10 +219,11 @@ var initializeSession = function (state, emitter) {
 
     var initPublisher = function () {
         var name = state.user && state.user.name || "";
+        var videoSource = state.chat.settings.voiceOnly === true ? { videoSource: null } : {};
         var pubOptions = extend(config.opentok.publisherProperties, {
             insertMode: "append",
             name: name
-        });
+        }, videoSource);
         return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
 
@@ -226,12 +231,12 @@ var initializeSession = function (state, emitter) {
         if (error) {
             handleResponse()(error);
         } else {
-            if (state.chat.publishFirst) {
+            if (state.chat.settings.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             session.on("streamCreated", function (event) {
-                if (!state.chat.publishFirst) {
+                if (!state.chat.settings.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 var subOptions = extend(config.opentok.subscriberProperties, {
@@ -416,15 +421,22 @@ module.exports = userReducer;
 //      
 
 
+var extend = require("xtend");
 var opentok = require("../opentok");
 
 var chatReducer = function (state, emitter) {
     state.chat = {
         room: null,
         roomSatus: "disconnected",
-        publishFirst: false
+        settings: {
+            voiceOnly: false,
+            publishFirst: false
+        }
     };
 
+    emitter.on(state.events.CHAT_SETTINGS_UPDATE, function (update) {
+        state.chat.settings = extend(state.chat.settings, update);
+    });
     emitter.on(state.events.CHAT_ROOMSTATUS_UPDATE, function (newStatus) {
         state.chat.roomStatus = newStatus;
         return emitter.emit(state.events.RENDER);
@@ -435,11 +447,9 @@ var chatReducer = function (state, emitter) {
     });
 
     emitter.on(state.events.CHAT_INIT, function (_ref) {
-        var room = _ref.room,
-            publishFirst = _ref.publishFirst;
+        var room = _ref.room;
 
         state.chat.room = room;
-        state.chat.publishFirst = publishFirst;
         opentok(state, emitter);
     });
 
@@ -455,7 +465,7 @@ var chatReducer = function (state, emitter) {
 };
 
 module.exports = chatReducer;
-},{"../opentok":7}],14:[function(require,module,exports){
+},{"../opentok":7,"xtend":undefined}],14:[function(require,module,exports){
 //      
 
 
