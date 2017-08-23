@@ -6,8 +6,13 @@ const messages = require("../../messages").embed.home;
 const styles = require("../../styles");
 
 const homeView: ChooView = (state, emit) => {
-    const requestRoom = event => {
+    const requestRoom = voiceOnly => event => {
+        const publishFirst = true;
+        emit(state.events.CHAT_SETTINGS_UPDATE, { voiceOnly, publishFirst });
         emit(state.events.API_ROOM);
+    };
+    const closeChat = event => {
+        console.log("TBD Close Chat");
     };
     const errorMsg = state.errors.api
         ? html`<p>${state.errors.api.message}</p>`
@@ -18,12 +23,25 @@ const homeView: ChooView = (state, emit) => {
             <div id="subscriber" style=${styles.subscriberDiv}></div>
         </div>`;
     videochat.isSameNode = target => target.id === "videos";
+    const buttons = !state.chat.room || !state.chat.room.sessionId
+        ? html`
+        <div>
+            <p>${messages.description}</p>
+            <button onclick=${requestRoom(true)}>${messages.voiceCall}</button>
+            <button onclick=${requestRoom(false)}>${messages.videoCall}</button>
+        </div>
+        `
+        : html`
+        <div>
+            <p>${state.chat.roomStatus}</p>
+            <button onclick=${closeChat}>${messages.hangup}</button>
+        </div>
+        `;
     return html`
 <div>
     <div>
         ${errorMsg}
-        <p>${state.chat.roomStatus}</p>
-        <button onclick=${requestRoom}>${messages.call}</button>
+        ${buttons}
     </div>
     ${videochat}
 </div>`;

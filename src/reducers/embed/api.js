@@ -27,8 +27,7 @@ const apiReducers: ChooMiddleware = (state, emitter) => {
                 );
             }
             const room = body.data.room;
-            const publishFirst = false;
-            return emitter.emit(state.events.CHAT_INIT, { room, publishFirst });
+            return emitter.emit(state.events.CHAT_INIT, { room });
         });
     });
 

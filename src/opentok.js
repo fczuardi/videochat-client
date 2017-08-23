@@ -21,10 +21,11 @@ const initializeSession: InitializeSession = (state, emitter) => {
 
     const initPublisher = () => {
         const name = (state.user && state.user.name) || "";
+        const videoSource = state.chat.settings.voiceOnly === true ? {videoSource: null} : {}
         const pubOptions = extend(config.opentok.publisherProperties, {
             insertMode: "append",
             name
-        });
+        }, videoSource);
         return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
 
@@ -32,12 +33,12 @@ const initializeSession: InitializeSession = (state, emitter) => {
         if (error) {
             handleResponse()(error);
         } else {
-            if (state.chat.publishFirst) {
+            if (state.chat.settings.publishFirst) {
                 session.publish(initPublisher(), handleResponse());
             }
             handleResponse("waiting")();
             session.on("streamCreated", event => {
-                if (!state.chat.publishFirst) {
+                if (!state.chat.settings.publishFirst) {
                     session.publish(initPublisher(), handleResponse());
                 }
                 const subOptions = extend(config.opentok.subscriberProperties, {
