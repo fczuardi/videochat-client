@@ -6,16 +6,14 @@ const messages = require("../../messages").app.home;
 const styles = require("../../styles");
 
 const homeView: ChooView = (state, emit) => {
-    const errorMsg = state.errors.api
-        ? html`<p>${state.errors.api.message}</p>`
-        : "";
     const onLoad = event => {
         const room = state.chat.room;
-        const publishFirst = true;
         if (!room) {
             return null;
         }
-        emit(state.events.CHAT_INIT, { room, publishFirst });
+        const publishFirst = true;
+        emit(state.events.CHAT_SETTINGS_UPDATE, { publishFirst });
+        emit(state.events.CHAT_INIT, { room });
     };
     const onLogoutClick = event => {
         emit(state.events.USER_LOGOUT);
@@ -27,15 +25,37 @@ const homeView: ChooView = (state, emit) => {
         </div>`;
     videochat.isSameNode = target => target.id === "videos";
     onLoad();
+    const classNames = {
+        switch: "mdl-switch mdl-js-switch mdl-js-ripple-effect",
+        switchInput: "mdl-switch__input",
+        switchLabel: "mdl-switch__label",
+        button: "mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect"
+    }
     return html`
 <div>
     <div>
-        ${errorMsg}
-        <div>
-            <dt>${messages.user}</dt>
-            <dd>${state.user.name} (${state.user.email})</dd>
+        <h3>${messages.greetings(state.user.name)}</h3>
+        <p>
+            ${messages.description}
+        </p>
+        <label for="isAvailable" class=${classNames.switch}>
+            <input
+                class=${classNames.switchInput}
+                type="checkbox"
+                id="isAvailable"
+            />
+            <span class=${classNames.switchLabel} >
+                ${messages.available(state.user.isAvailable)}
+            </span>
+        </label>
+        <div style="margin-top: 30px">
+            <button
+                class=${classNames.button}
+                onclick=${onLogoutClick}
+            >
+                ${messages.logout}
+            </button>
         </div>
-        <button onclick=${onLogoutClick}>${messages.logout}</button>
     </div>
     ${videochat}
 </div>`;

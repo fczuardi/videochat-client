@@ -6,7 +6,8 @@ module.exports = {
                 "maybe you forgot to include the goup ID. Example: localhost:9966/#group/ebf1139e-b168-4e15-8095-a70ec444c0d3"
         },
         home: {
-            description: "If you don't want to turn your camera on, or if you don't have a camera, choose Voice Call",
+            description:
+                "If you don't want to turn your camera on, or if you don't have a camera, choose Voice Call",
             voiceCall: "Voice Call",
             videoCall: "Video Call",
             hangup: "Close Chat"
@@ -19,7 +20,10 @@ module.exports = {
             login: "Next"
         },
         home: {
-            user: "User",
+            greetings: name => `Hello ${name}`,
+            description: "Are you available to answer calls?",
+            available: isAvailable =>
+                isAvailable ? "I am available" : "I am not available",
             logout: "Logout"
         }
     },
