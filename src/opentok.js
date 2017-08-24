@@ -21,11 +21,16 @@ const initializeSession: InitializeSession = (state, emitter) => {
 
     const initPublisher = () => {
         const name = (state.user && state.user.name) || "";
-        const videoSource = state.chat.settings.voiceOnly === true ? {videoSource: null} : {}
-        const pubOptions = extend(config.opentok.publisherProperties, {
-            insertMode: "append",
-            name
-        }, videoSource);
+        const videoSource =
+            state.chat.settings.voiceOnly === true ? { videoSource: null } : {};
+        const pubOptions = extend(
+            config.opentok.publisherProperties,
+            {
+                insertMode: "append",
+                name
+            },
+            videoSource
+        );
         return OT.initPublisher("publisher", pubOptions, handleResponse());
     };
 

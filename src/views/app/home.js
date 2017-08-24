@@ -29,8 +29,9 @@ const homeView: ChooView = (state, emit) => {
         switch: "mdl-switch mdl-js-switch mdl-js-ripple-effect",
         switchInput: "mdl-switch__input",
         switchLabel: "mdl-switch__label",
-        button: "mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect"
-    }
+        button:
+            "mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect"
+    };
     return html`
 <div>
     <div>

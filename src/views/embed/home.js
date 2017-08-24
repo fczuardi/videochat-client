@@ -23,15 +23,16 @@ const homeView: ChooView = (state, emit) => {
             <div id="subscriber" style=${styles.subscriberDiv}></div>
         </div>`;
     videochat.isSameNode = target => target.id === "videos";
-    const buttons = !state.chat.room || !state.chat.room.sessionId
-        ? html`
+    const buttons =
+        !state.chat.room || !state.chat.room.sessionId
+            ? html`
         <div>
             <p>${messages.description}</p>
             <button onclick=${requestRoom(true)}>${messages.voiceCall}</button>
             <button onclick=${requestRoom(false)}>${messages.videoCall}</button>
         </div>
         `
-        : html`
+            : html`
         <div>
             <p>${state.chat.roomStatus}</p>
             <button onclick=${closeChat}>${messages.hangup}</button>
