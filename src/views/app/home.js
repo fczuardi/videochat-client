@@ -24,7 +24,6 @@ const homeView: ChooView = (state, emit) => {
             <div id="subscriber" style=${styles.subscriberDiv}></div>
         </div>`;
     videochat.isSameNode = target => target.id === "videos";
-    onLoad();
     const classNames = {
         switch: "mdl-switch mdl-js-switch mdl-js-ripple-effect",
         switchInput: "mdl-switch__input",
@@ -32,33 +31,36 @@ const homeView: ChooView = (state, emit) => {
         button:
             "mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect"
     };
+    const availabilityToggle = html`
+        <div>
+            <p>
+                ${messages.description}
+            </p>
+            <label for="isAvailable" class=${classNames.switch}>
+                <input
+                    class=${classNames.switchInput}
+                    type="checkbox"
+                    id="isAvailable"
+                />
+                <span class=${classNames.switchLabel} >
+                    ${messages.available(state.user.isAvailable)}
+                </span>
+            </label>
+        </div>
+    `;
+    onLoad();
     return html`
 <div>
-    <div>
-        <h3>${messages.greetings(state.user.name)}</h3>
-        <p>
-            ${messages.description}
-        </p>
-        <label for="isAvailable" class=${classNames.switch}>
-            <input
-                class=${classNames.switchInput}
-                type="checkbox"
-                id="isAvailable"
-            />
-            <span class=${classNames.switchLabel} >
-                ${messages.available(state.user.isAvailable)}
-            </span>
-        </label>
-        <div style="margin-top: 30px">
-            <button
-                class=${classNames.button}
-                onclick=${onLogoutClick}
-            >
-                ${messages.logout}
-            </button>
-        </div>
+    <h3>${messages.greetings(state.user.name)}</h3>
+    ${state.chat.room ? videochat : availabilityToggle}
+    <div style="margin-top: 30px">
+        <button
+            class=${classNames.button}
+            onclick=${onLogoutClick}
+        >
+            ${messages.logout}
+        </button>
     </div>
-    ${videochat}
 </div>`;
 };
 

@@ -27,6 +27,14 @@ const userReducer: ChooMiddleware = (state, emitter) => {
         emitter.emit(state.events.WORKER_REGISTER);
     });
 
+    emitter.on(state.events.USER_LOGOUT, () => {
+        state.user.id = null;
+        if (state.user.saveLocally) {
+            window.localStorage.removeItem("userId");
+        }
+        emitter.emit(state.events.RENDER);
+    });
+
     emitter.on(state.events.ERROR_API, () => emitter.emit(state.events.RENDER));
 
     emitter.on(state.events.USER_UPDATED, user => {

@@ -56,8 +56,19 @@ const initializeSession: InitializeSession = (state, emitter) => {
                     handleResponse("connected")
                 );
             });
+
+            session.on("sessionDisconnected", event => {
+                console.log("sessionDisconnected event");
+            });
+
+            session.on("streamDestroyed", event => {
+                console.log("streamDestroyed");
+                handleResponse("disconnected")();
+            });
         }
     });
+
+    return session;
 };
 
 module.exports = initializeSession;
