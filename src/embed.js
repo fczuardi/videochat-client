@@ -16,6 +16,7 @@ app.use(apiReducer);
 app.use(errorReducer());
 app.use(chatReducer);
 app.route("/videochat-client/embed.html/group/:groupId", embedView);
+app.route("/embed.html/group/:groupId", embedView);
 app.route("/group/:groupId", embedView);
 app.route("*", defaultView);
 
